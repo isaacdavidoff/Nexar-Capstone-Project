@@ -38,9 +38,10 @@ Stores authenticated user information.
 
 ```json
 {
-  "userId": "string (Firebase Auth UID)",
+  "userId": "string",
   "name": "string",
   "email": "string",
+  "role": "user",
   "createdAt": "timestamp"
 }
 ```
@@ -62,6 +63,7 @@ Stores courses created by a user.
   "userId": "string (ref > users.userId)",
   "courseName": "string",
   "term": "string",
+  "color": "string",
   "createdAt": "timestamp"
 }
 ```
@@ -82,14 +84,18 @@ Core collection storing all academic deadlines.
   "taskId": "string",
   "userId": "string (ref > users.userId)",
   "courseId": "string (ref > courses.courseId)",
+  "courseName": "string",
+  "courseColor":"string",
 
   "title": "string",
-  "type": "string (assignment | lab | quiz | exam | project)",
-  "status": "string (pending | in_progress | completed | overdue)",
+  "type": "assignment | lab | quiz | exam | project",
+  "status": "pending | in_progress | completed ",
 
   "dueDate": "timestamp",
-  "priority": "string (low | medium | high)",
-
+  "dueDateDay":"string",
+  "priority": "low | medium | high",
+  "estimatedTime":"string",
+  "isCompleted":"boolean",
   "notes": "string",
 
   "createdAt": "timestamp",
@@ -105,6 +111,7 @@ Stores reminder notifications for each task.
 {
   "reminderId": "string",
   "reminderTime": "timestamp",
+  "type":"email | push",
   "sent": "boolean",
   "createdAt": "timestamp"
 }
@@ -117,6 +124,22 @@ Stores reminder notifications for each task.
 * `sent` prevents duplicate notifications
 
 ---
+
+## Focus Sessions
+
+```json
+{
+  "sessionId": "string",
+  "userId": "string",
+  "taskId": "string",
+
+  "duration": "number",
+  "startedAt": "timestamp",
+  "endedAt": "timestamp",
+
+  "createdAt": "timestamp"
+}
+```
 
 ## Relationships (Logical)
 
@@ -143,7 +166,7 @@ Although Firestore is NoSQL, relationships are maintained via IDs:
 
 * Task types and status values are stored as strings instead of lookup tables
 * Reminders are stored as a subcollection
-* Separate collections (users, courses, tasks)
+* Separate collections (users, courses, tasks, focus)
 
 ---
 
