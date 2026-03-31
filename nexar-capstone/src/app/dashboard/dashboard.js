@@ -2,14 +2,7 @@ import "./dashboard.css";
 
 export default function Dashboard() {
 
-	const deadlines = [
-		{ title: "Capstone - PROJ 309 IDC", course: "PROJ 309", due: "Today", time: "11:59 PM" },
-		{ title: "DSGN 301 Lab Report", course: "DSGN 301", due: "Tomorrow", time: "2:00 PM" },
-		{ title: "English Essay Draft", course: "ENG 301", due: "Wed, Feb 21", time: "11:59 PM" },
-		{ title: "PHIL Quiz", course: "PHIL 205", due: "Thu, Feb 22", time: "10:00 AM" },
-		{ title: "CS Project Milestone", course: "CS 250", due: "Fri, Feb 23", time: "5:00 PM" }
-	];
-
+	const deadlines = [];
 	return (
 		<div className="page">
 

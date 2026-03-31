@@ -19,3 +19,4 @@ export const resetPasswordAuth = (email) =>
   sendPasswordResetEmail(auth, email);
 
 export const deleteAuthUser = (user) => deleteUser(user);
+
