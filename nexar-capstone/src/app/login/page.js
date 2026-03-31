@@ -36,9 +36,9 @@ export default function LoginPage() {
           return;
         }
     
-      router.push("/dashboard");
+      router.push("/");
     } catch (err) {
-      setError("Invalid credentials");
+      setError(err.message || "invalid credentials");
     }
 
     setLoading(false);
@@ -89,6 +89,10 @@ export default function LoginPage() {
         className="mt-4 text-sm text-blue-600 hover:underline w-full text-center"
       >
         Forgot Password?
+      </button>
+
+      <button onClick={() => router.push("/signup")} className="mt-2 text-sm text-gray-600 hover:underline w-full text-center">
+      <span>Don&apos;t have an account? Sign Up</span>
       </button>
     </div>
   </div>

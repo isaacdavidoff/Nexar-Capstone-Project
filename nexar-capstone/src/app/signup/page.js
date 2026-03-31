@@ -38,7 +38,7 @@ try {
     }
 
       if (user) {
-        router.push("/dashboard");
+        router.push("/");
       setError(err?.message || "An unexpected error occurred.");
         setError("Signup failed. Please try again.");
       }
