@@ -26,22 +26,25 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
+  
     try {
-        const { data, error } = await login(form);
-
-        if (error) {
-          setError(error);
-          setLoading(false);
-          return;
-        }
-    
-      router.push("/");
+      const { data, error } = await login(form);
+  
+      if (error) {
+        setError(error);
+        setLoading(false);
+        return;
+      }
+  
+      // Store user in localStorage
+      localStorage.setItem("currentUser", JSON.stringify(data));
+  
+      router.push("/"); // redirect
     } catch (err) {
       setError(err.message || "invalid credentials");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (

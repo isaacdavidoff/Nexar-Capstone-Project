@@ -9,6 +9,11 @@ export const viewport = {
     userScalable: false,
 };
 
+export const metadata = {
+    title: "Nexar - Your AI-Powered Task Manager",
+    description: "Nexar is an AI-powered task management application designed to help you organize, prioritize, and optimize your daily tasks. With intelligent recommendations and a user-friendly interface, Nexar makes it easier than ever to stay on top of your responsibilities and boost your productivity.",
+};
+
 export default function RootLayout ({ children }) {
     return (
         <html lang="en">

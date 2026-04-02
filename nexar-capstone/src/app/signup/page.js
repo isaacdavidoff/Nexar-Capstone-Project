@@ -28,28 +28,29 @@ export default function SignupPage() {
 
     setLoading(true);
     setError("");
-try {
-    const { user, error: signUpError } = await signUp(form);
 
-    if (signUpError) {
-      setError(signUpError);
-      setLoading(false);
-      return;
-    }
+    try {
+      const { data, error: signUpError } = await signUp(form);
 
-      if (user) {
-        router.push("/");
-      setError(err?.message || "An unexpected error occurred.");
-        setError("Signup failed. Please try again.");
+      // ❌ error case
+      if (signUpError) {
+        setError(signUpError);
+        setLoading(false);
+        return;
       }
+
+      // ✅ success case
+      if (data) {
+        router.push("/dashboard"); // change to your route
+        return;
+      }
+
     } catch (err) {
-      setError(err.message);
-
-    setLoading(false);
-
+      setError(err.message || "Something went wrong");
+    } finally {
+      setLoading(false); // ✅ always reset loading
+    }
   };
-
-}
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
@@ -59,7 +60,7 @@ try {
           Create Account
         </h1>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4" disabled={loading}>
           
           <input
             name="name"

@@ -1,26 +1,36 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { subscribeToUser } from "@/lib/user";
 
-/**
- * Returns:
- * - undefined -> loading
- * - null -> not logged in
- * - user object -> logged in
- */
-export default function useAuth() {
+export default function useAuthUser() {
   const [user, setUser] = useState(undefined);
 
   useEffect(() => {
- 
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser ?? null);
+    let unsubscribeUser = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+  
+      if (unsubscribeUser) {
+        unsubscribeUser();
+        unsubscribeUser = null;
+      }
+
+      if (currentUser?.uid) {
+        unsubscribeUser = subscribeToUser(currentUser.uid, (userDoc) => {
+          setUser(userDoc);
+        });
+      } else {
+        setUser(null);
+      }
     });
 
- 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeUser) unsubscribeUser();
+    };
   }, []);
 
   return user;

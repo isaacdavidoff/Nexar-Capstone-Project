@@ -1,4 +1,14 @@
-import { doc, setDoc, deleteDoc, collection, query, where, getDocs } from "firebase/firestore";
+import {
+  doc,
+  setDoc,
+  deleteDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  onSnapshot,
+  orderBy,
+} from "firebase/firestore";
 import { db } from "./firebase";
 
 /**
@@ -41,12 +51,95 @@ export const deleteUserDoc = async (userId) => {
 export const deleteUserData = async (userId) => {
   const collections = ["tasks", "courses", "sessions"];
 
-  for (const col of collections) {
-    const q = query(collection(db, col), where("userId", "==", userId));
-    const snapshot = await getDocs(q);
-    snapshot.forEach(async (docSnap) => {
-      await deleteDoc(doc(db, col, docSnap.id));
-      console.log(`Deleted ${col} doc: ${docSnap.id}`);
-    });
-  }
+  await Promise.all(
+    collections.map(async (col) => {
+      const q = query(collection(db, col), where("userId", "==", userId));
+      const snapshot = await getDocs(q);
+
+      const deletions = snapshot.docs.map((docSnap) =>
+        deleteDoc(doc(db, col, docSnap.id))
+      );
+
+      await Promise.all(deletions);
+
+      console.log(`Deleted ${col}`);
+    })
+  );
+};
+
+/**
+ * Subscribe to real-time task updates for a user
+ * @param {string} userId
+ * @param {function} callback - receives updated tasks array
+ * @returns unsubscribe function
+ */
+export const subscribeToTasks = (userId, callback) => {
+  if (!userId) return;
+
+  const q = query(
+    collection(db, "tasks"),
+    where("userId", "==", userId),
+    orderBy("dueDate", "asc")
+  );
+
+  const unsubscribe = onSnapshot(
+    q,
+    (snapshot) => {
+      const tasks = snapshot.docs.map((doc) => ({
+        id: doc.id, // ✅ consistent naming
+        ...doc.data(),
+      }));
+
+      callback(tasks);
+    },
+    (error) => {
+      console.error("Error subscribing to tasks:", error);
+    }
+  );
+
+  return unsubscribe;
+};
+
+export const subscribeToUpcomingTasks = (userId, callback) => {
+  if (!userId) return;
+
+  const now = new Date();
+
+  const q = query(
+    collection(db, "tasks"),
+    where("userId", "==", userId),
+    where("dueDate", ">=", now),
+    orderBy("dueDate", "asc")
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const tasks = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    callback(tasks);
+  });
+};
+
+export const subscribeToOverdueTasks = (userId, callback) => {
+  if (!userId) return;
+
+  const now = new Date();
+
+  const q = query(
+    collection(db, "tasks"),
+    where("userId", "==", userId),
+    where("dueDate", "<", now),
+    orderBy("dueDate", "asc")
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const tasks = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    callback(tasks);
+  });
 };
