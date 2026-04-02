@@ -14,31 +14,39 @@ import {
 import { db } from "./firebase";
 
 const mapSnapshot = (snapshot) => {
-  return snapshot.docs.map((doc) => ({
-    courseId: doc.id,
-    ...doc.data(),
-  }));
+  return snapshot.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      courseId: doc.id,
+      ...data,
+   
+      createdAt: data.createdAt?.toDate() || null,
+      updatedAt: data.updatedAt?.toDate() || null,
+    };
+  });
 };
 
-export const createCourse = async ({
-  userId,
-  courseName,
-  term,
-  color,
-}) => {
+export const createCourse = async ({ userId, courseName, term, color }) => {
+  if (!userId) throw new Error("User ID is required to create a course");
+
   const newCourse = {
     userId,
-    courseName,
-    term,
+    courseName: courseName.trim(),
+    term: term?.trim() || "",
     color: color || "#6366f1",
-
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
   };
 
   const courseRef = await addDoc(collection(db, "courses"), newCourse);
 
-  return { courseId: courseRef.id, ...newCourse };
+
+  return { 
+    courseId: courseRef.id, 
+    ...newCourse,
+    createdAt: newCourse.createdAt.toDate(),
+    updatedAt: newCourse.updatedAt.toDate()
+  };
 };
 
 export const subscribeToCourses = (userId, callback) => {
@@ -47,17 +55,13 @@ export const subscribeToCourses = (userId, callback) => {
   const q = query(
     collection(db, "courses"),
     where("userId", "==", userId),
-    orderBy("createdAt", "asc")
+    orderBy("createdAt", "desc") 
   );
 
   return onSnapshot(
     q,
-    (snapshot) => {
-      callback(mapSnapshot(snapshot));
-    },
-    (error) => {
-      console.error("subscribeToCourses error:", error);
-    }
+    (snapshot) => callback(mapSnapshot(snapshot)),
+    (error) => console.error("Real-time subscription error:", error)
   );
 };
 
@@ -75,12 +79,17 @@ export const getCoursesByUser = async (userId) => {
 };
 
 export const updateCourse = async (courseId, updates) => {
+  if (!courseId) throw new Error("Course ID is required");
+  
   const courseRef = doc(db, "courses", courseId);
-
+  const now = Timestamp.now();
+  
   await updateDoc(courseRef, {
     ...updates,
-    updatedAt: Timestamp.now(),
+    updatedAt: now,
   });
+
+  return { id: courseId, ...updates, updatedAt: now.toDate() };
 };
 
 export const deleteCourse = async (courseId) => {

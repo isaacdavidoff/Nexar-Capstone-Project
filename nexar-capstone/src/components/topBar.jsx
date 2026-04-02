@@ -8,7 +8,7 @@ export default function TopBar({ onAddTask}) {
   const username = user?.name || "User";
 
   return (
-    <div className="flex flex-col flex-row items-center justify-between gap-3 p-6">
+    <div className="flex flex-col flex-row items-center justify-between gap-3 p-6 max-w-7xl mx-auto">
       <div>
         <h2 className="text-lg font-semibold capitalize">
           Welcome, {username}!

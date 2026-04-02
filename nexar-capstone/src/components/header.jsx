@@ -9,17 +9,11 @@ export default function Header() {
   const user = useAuthUser();
 
   const navItems = [
-    { name: "Dashboard", href: "/" },
+    { name: "Dashboard", href: "/dashboard" },
     { name: "Courses", href: "/courses" },
     { name: "Focus", href: "/focus" },
     { name: "Reports", href: "/reports" },
   ];
-
-  const getRoleLabel = (role) => {
-    if (role === "admin") return "Admin";
-    if (role === "user") return "Student";
-    return "User";
-  };
 
   const isActive = (href) => {
     if (href === "/") return pathname === "/";

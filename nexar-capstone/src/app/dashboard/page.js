@@ -1,6 +1,5 @@
 "use client";
 
-import ProtectedRoute from "@/components/protectedRoute";
 import useTasks from "@/hooks/useTasks";
 import useAuth from "@/hooks/useAuth";
 
@@ -12,6 +11,7 @@ import FocusCard from "@/components/focusCard";
 import { logout } from "@/services/auth";
 import useFocus from "@/hooks/useFocus";
 import FocusTimer from "@/components/focusTimer";
+import ProtectedRoute from "@/components/protectedRoute";
 
 export default function DashboardPage() {
   return (
@@ -24,7 +24,7 @@ export default function DashboardPage() {
 function DashboardContent() {
   const user = useAuth();
   const { tasks, upcoming, workload, recommendation, loading } = useTasks(
-    user?.uid
+    user?.id
   );
 
   const { activeSession, timeLeft, startSession, cancelSession } = useFocus();
@@ -55,7 +55,7 @@ function DashboardContent() {
     <DashboardLayout
       left={
         <>
-          <CalendarCard tasks={tasks} />
+          <CalendarCard tasks={tasks || []} />
           <WorkloadCard workload={workload} />
         </>
       }

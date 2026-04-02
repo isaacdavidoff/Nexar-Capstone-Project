@@ -32,23 +32,23 @@ export default function SignupPage() {
     try {
       const { data, error: signUpError } = await signUp(form);
 
-      // ❌ error case
+ 
       if (signUpError) {
         setError(signUpError);
         setLoading(false);
         return;
       }
 
-      // ✅ success case
+     
       if (data) {
-        router.push("/dashboard"); // change to your route
+        router.push("/dashboard"); 
         return;
       }
 
     } catch (err) {
       setError(err.message || "Something went wrong");
     } finally {
-      setLoading(false); // ✅ always reset loading
+      setLoading(false); 
     }
   };
 

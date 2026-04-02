@@ -1,8 +1,9 @@
-import DashboardPage from '@/app/dashboard/dash';
+import DashboardPage from '@/app/dashboard/page';
+
 
 export default function Page() {
 	return (
-
+	
 	<DashboardPage />
 
 	)

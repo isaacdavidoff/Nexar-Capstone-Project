@@ -36,10 +36,9 @@ export default function LoginPage() {
         return;
       }
   
-      // Store user in localStorage
       localStorage.setItem("currentUser", JSON.stringify(data));
   
-      router.push("/"); // redirect
+      router.push("/dashboard"); 
     } catch (err) {
       setError(err.message || "invalid credentials");
     } finally {

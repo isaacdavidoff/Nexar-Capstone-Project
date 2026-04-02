@@ -8,16 +8,16 @@ export default function CalendarCard({ tasks = [] }) {
   const now = new Date();
 
   const days = useMemo(() => {
-    const d = new Date();
-    const day = d.getDay();
-
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    const start = new Date(d.setDate(diff));
-
+    const startOfWeek = new Date();
+    const day = startOfWeek.getDay();
+    const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
+    startOfWeek.setDate(diff);
+    startOfWeek.setHours(0, 0, 0, 0); 
+  
     return [...Array(7)].map((_, i) => {
-      const date = new Date(start);
-      date.setDate(start.getDate() + i);
-      return date;
+      const d = new Date(startOfWeek);
+      d.setDate(startOfWeek.getDate() + i);
+      return d;
     });
   }, []);
 
@@ -48,7 +48,7 @@ export default function CalendarCard({ tasks = [] }) {
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center mb-3 text-sm transition-colors ${
                     active 
-                      ? "bg-violet-600 text-white shadow-md shadow-violet-200" 
+                      ? "bg-violet-500 text-white shadow-md shadow-violet-200" 
                       : "bg-neutral-50 text-neutral-600 group-hover:bg-neutral-100"
                   }`}
                 >
@@ -57,18 +57,28 @@ export default function CalendarCard({ tasks = [] }) {
 
              
                 <div className="w-full flex flex-col gap-1 min-h-[40px]">
-                  {dayTasks.slice(0, 2).map((task) => (
-                    <div
-                    key={task.id || task.taskId}
-                    title={task.title}
-                    className="text-[9px] leading-tight px-1.5 py-1 rounded-md truncate font-medium text-white"
-                    style={{
-                      backgroundColor: task.courseColor || "#e5e7eb",
-                    }}
-                  >
-                    {task.title}
-                  </div>
-                  ))}
+                  {dayTasks.slice(0, 2).map((task) => {
+                 
+                    return (
+                      <div
+                        key={task.id || task.taskId}
+                        title={task.title}
+                        className="text-[9px] leading-tight px-1.5 py-1 rounded-md truncate font-medium shadow-sm"
+                        style={{
+                          backgroundColor: task.courseColor || "#6366f1",
+                          color: "#fff",
+                        }}
+                      >
+                        <p>{task.title || "Untitled Task"}</p>
+                        <p className="text-[7px] opacity-80 mt-0.5">
+                          {task.courseName || "No Course"}
+                        </p>
+                      </div>
+                      
+                    );
+                  })}
+
+
 
                   {dayTasks.length > 2 && (
                     <span className="text-[9px] text-neutral-400 text-center font-medium mt-1">

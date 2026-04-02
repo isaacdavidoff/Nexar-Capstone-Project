@@ -1,5 +1,6 @@
 import React from "react";
 import "./global.css";
+import ProtectedRoute from "@/components/protectedRoute";
 
 export const viewport = {
     width: "device-width",

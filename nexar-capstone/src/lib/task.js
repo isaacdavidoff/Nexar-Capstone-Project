@@ -70,10 +70,17 @@ export const subscribeToOverdueTasks = (userId, callback) => {
 };
 
 const mapSnapshot = (snapshot) => {
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
+  return snapshot.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+   
+      dueDate: data.dueDate?.toDate ? data.dueDate.toDate() : data.dueDate,
+      createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
+      updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt,
+    };
+  });
 };
 
 export const addTask = async (task) => {

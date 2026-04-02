@@ -11,7 +11,7 @@ import AddTaskModal from "@/components/addTaskModal";
 export default function DashboardLayout({ left, right }) {
   const user = useAuthUser();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { courses, loading, error } = useCourses(user?.userId);
+  const { courses, loading, error } = useCourses(user?.id);
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -36,7 +36,6 @@ export default function DashboardLayout({ left, right }) {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         courses={courses || []}
-       disabled={loading || error}
       />
 
       <BottomNav />

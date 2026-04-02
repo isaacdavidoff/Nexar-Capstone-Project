@@ -3,6 +3,7 @@
 import { useState } from "react";
 import useAuthUser from "@/hooks/useAuth";
 import { addTask } from "@/lib/task";
+import { getCoursesByUser } from "@/lib/courses";
 
 export default function AddTaskModal({ isOpen, onClose, courses = [] }) {
   const user = useAuthUser();
@@ -43,7 +44,7 @@ export default function AddTaskModal({ isOpen, onClose, courses = [] }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user.id) return;
 
     if (!form.courseId) {
       alert("Please select a course for this task.");
@@ -54,7 +55,8 @@ export default function AddTaskModal({ isOpen, onClose, courses = [] }) {
       setLoading(true);
       await addTask({
         ...form,
-        userId: user.userId,
+        userId: user.id,
+        courseColor: form.courseColor || "#888",
         dueDate: new Date(form.dueDate).toISOString(),
       });
 
@@ -113,19 +115,19 @@ export default function AddTaskModal({ isOpen, onClose, courses = [] }) {
                 value={form.courseId}
                 onChange={handleChange}
                 className="w-full border-gray-200 border rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500"
+                required
               >
-                <option value="">Select Course</option>
+                <option value="" disabled>
+                  Choose a course...
+                </option>
                 {courses.length === 0 ? (
                   <option disabled>No courses yet</option>
                 ) : (
-                  <>
-                    <option value="">Select course</option>
-                    {courses.map((course) => (
-                      <option key={course.courseId} value={course.courseId}>
-                        {course.courseName}
-                      </option>
-                    ))}
-                  </>
+                  courses.map((course) => (
+                    <option key={course.courseId} value={course.courseId}>
+                      {course.courseName}
+                    </option>
+                  ))
                 )}
               </select>
             </div>
