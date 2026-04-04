@@ -34,3 +34,9 @@
     const { start, end } = getWeekRange(new Date());
     return date >= start && date <= end;
   };
+
+  export const formatDateInput = (date) => {
+    if (!date) return "";
+    const d = date?.toDate ? date.toDate() : new Date(date);
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  };

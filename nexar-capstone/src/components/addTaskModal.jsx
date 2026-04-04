@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import useAuthUser from "@/hooks/useAuth";
-import { addTask } from "@/lib/task";
-import { getCoursesByUser } from "@/lib/courses";
+import { addTask, updateTask } from "@/lib/task";
+import { formatDateInput } from "@/lib/dateFormat";
 
-export default function AddTaskModal({ isOpen, onClose, courses = [] }) {
+export default function AddTaskModal({ isOpen, onClose, courses = [], existingTask = null }) {
   const user = useAuthUser();
+  const isEdit = !!existingTask;
   const [loading, setLoading] = useState(false);
 
-  const initialFormState = {
+  const initialFormState = useMemo(() => ({
     title: "",
     courseId: "",
     courseName: "",
@@ -19,9 +20,27 @@ export default function AddTaskModal({ isOpen, onClose, courses = [] }) {
     priority: "medium",
     estimatedTime: 60,
     notes: "",
-  };
+  }), []);
 
   const [form, setForm] = useState(initialFormState);
+
+useEffect(() => {
+  if (existingTask) {
+    setForm({
+      title: existingTask.title || "",
+      courseId: existingTask.courseId || "",
+      courseName: existingTask.courseName || "",
+      courseColor: existingTask.courseColor || "",
+      dueDate: formatDateInput(existingTask.dueDate) || "",
+      type: existingTask.type || "assignment",
+      priority: existingTask.priority || "medium",
+      estimatedTime: existingTask.estimatedTime || 60,
+      notes: existingTask.notes || "",
+    });
+  } else {
+    setForm(initialFormState);
+  }
+}, [existingTask, initialFormState]);
 
   if (!isOpen) return null;
 
@@ -44,7 +63,10 @@ export default function AddTaskModal({ isOpen, onClose, courses = [] }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!user.id) return;
+    if (!user?.id) {
+      alert("You must be logged in to manage tasks.");
+      return;
+    }
 
     if (!form.courseId) {
       alert("Please select a course for this task.");
@@ -53,18 +75,24 @@ export default function AddTaskModal({ isOpen, onClose, courses = [] }) {
 
     try {
       setLoading(true);
-      await addTask({
+      
+      const taskData = {
         ...form,
         userId: user.id,
-        courseColor: form.courseColor || "#888",
-        dueDate: new Date(form.dueDate).toISOString(),
-      });
+        estimatedTime: parseInt(form.estimatedTime) || 0,
+        dueDate: new Date(form.dueDate).toISOString(), 
+      };
 
-      setForm(initialFormState);
+      if (isEdit) {
+        await updateTask(existingTask.id, taskData);
+      } else {
+        await addTask(taskData);
+      }
+
       onClose();
     } catch (err) {
-      console.error("Failed to add task:", err);
-      alert("Something went wrong. Please try again.");
+      console.error("Task Action Error:", err);
+      alert("Failed to save task. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -80,7 +108,7 @@ export default function AddTaskModal({ isOpen, onClose, courses = [] }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50/50">
-          <h2 className="text-xl font-bold text-gray-800">New Task</h2>
+          <h2 className="text-xl font-semibold text-gray-800">{isEdit ? "Edit Task" : "New Task"} </h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-200 rounded-full transition text-gray-500"
@@ -223,7 +251,7 @@ export default function AddTaskModal({ isOpen, onClose, courses = [] }) {
               disabled={loading}
               className="flex-[2] bg-violet-600 text-white py-2.5 rounded-xl font-bold hover:bg-violet-700 transition disabled:opacity-50"
             >
-              {loading ? "Adding..." : "Create Task"}
+              {loading ? isEdit ? "Updating..." : "Creating..." : isEdit ? "Update Task" : "Create Task"}
             </button>
           </div>
         </form>

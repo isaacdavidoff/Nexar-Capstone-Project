@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react"; // Added useState
 import useTasks from "@/hooks/useTasks";
 import useAuth from "@/hooks/useAuth";
 
@@ -23,45 +24,40 @@ export default function DashboardPage() {
 
 function DashboardContent() {
   const user = useAuth();
-  const { tasks, upcoming, workload, recommendation, loading } = useTasks(
-    user?.id
-  );
-
+  const { tasks, upcoming, workload, recommendation, loading } = useTasks(user?.id);
   const { activeSession, timeLeft, startSession, cancelSession } = useFocus();
 
-  const handleLogout = () => {
-    logout();
-  };
+  // State to track which task is being edited
+  const [taskToEdit, setTaskToEdit] = useState(null);
 
-  if (user === undefined) {
+  const handleLogout = () => logout();
+
+  if (loading || user === undefined) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-500 text-lg">Checking authentication...</p>
-      </div>
-    );
-  }
-
-  if (user === null) return null;
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-500 text-lg">Loading dashboard...</p>
+        <p className="text-gray-500 text-lg italic">Preparing your workspace...</p>
       </div>
     );
   }
 
   return (
     <DashboardLayout
+      selectedTask={taskToEdit} 
+      clearSelectedTask={() => setTaskToEdit(null)}
       left={
         <>
-          <CalendarCard tasks={tasks || []} />
+          <CalendarCard 
+            tasks={tasks || []} 
+          />
           <WorkloadCard workload={workload} />
         </>
       }
       right={
         <>
-          <UpcomingTasksCard tasks={upcoming} />
+          <UpcomingTasksCard 
+            tasks={upcoming} 
+            onEditTask={setTaskToEdit} 
+          />
           <FocusCard task={recommendation} onStartFocus={startSession} />
           <FocusTimer
             session={activeSession}
@@ -70,7 +66,7 @@ function DashboardContent() {
           />
           <button
             onClick={handleLogout}
-            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+            className="w-full mt-4 px-4 py-2 border border-red-200 text-red-500 rounded-xl hover:bg-red-50 transition font-medium"
           >
             Logout
           </button>

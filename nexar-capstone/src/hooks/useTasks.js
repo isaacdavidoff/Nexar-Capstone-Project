@@ -2,6 +2,12 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { subscribeToTasks } from "@/lib/task";
+import { 
+  getUpcomingTasks, 
+  calculateWorkload, 
+  getFocusRecommendation, 
+  sortTasksByPriority 
+} from "@/services/task";
 
 export default function useTasks(userId) {
   const [tasks, setTasks] = useState(null); 
@@ -17,13 +23,18 @@ export default function useTasks(userId) {
     return () => unsubscribe();
   }, [userId]);
 
-  const safeTasks = userId ? tasks || [] : [];
-  const loading = userId ? tasks === null : false;
-  const error = userId && tasks === null ? "Failed to load tasks." : null;
+  const results = useMemo(() => {
+    const rawTasks = tasks || [];
+    
+    return {
+      tasks: sortTasksByPriority(rawTasks),
+      upcoming: getUpcomingTasks(rawTasks),
+      workload: calculateWorkload(rawTasks),
+      recommendation: getFocusRecommendation(rawTasks),
+      loading: tasks === null,
+      isEmpty: tasks !== null && tasks.length === 0
+    };
+  }, [tasks]);
 
-  return {
-    tasks: safeTasks,
-    loading,
-    error,
-  };
+  return results;
 }

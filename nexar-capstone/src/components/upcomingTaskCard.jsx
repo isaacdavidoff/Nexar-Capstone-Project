@@ -6,7 +6,7 @@ import { toDate, sortTasksByPriority } from "@/services/task";
 export default function UpcomingTasksCard({
   tasks = [],
   loading,
-  onSelectTask,
+  onEditTask,
 }) {
   const [now, setNow] = useState(new Date());
 
@@ -96,55 +96,37 @@ export default function UpcomingTasksCard({
 
           return (
             <li
-              onClick={() => onSelectTask?.(task)}
+              onClick={() => onEditTask?.(task)}
               key={task.id || task.taskId}
-              className="flex items-center justify-between gap-3 p-3 rounded-lg border hover:bg-gray-50 transition cursor-pointer"
+              className="flex items-center justify-between gap-3 p-3 rounded-lg border border-transparent hover:border-violet-200 hover:bg-violet-50/30 transition cursor-pointer"
             >
-              {/* Left */}
-              <div className="min-w-0 flex flex-col gap-1">
-                {/* Top row: priority + title */}
-                <div className="flex items-center gap-2">
-                  {task.priority && (
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-medium ${
-                        priorityColor[task.priority] ||
-                        "bg-gray-100 text-gray-600"
-                      }`}
-                    >
+              {/* Left Side: Task Info */}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                   {/* Priority Badge */}
+                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${priorityColor[task.priority]}`}>
                       {task.priority}
-                    </span>
-                  )}
-
-                  <p className="text-sm font-medium truncate">{task.title}</p>
-                  {task.type && (
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] ${
-                        typeColor[task.type]
-                      }`}
-                    >
-                      {task.type}
-                    </span>
-                  )}
+                   </span>
+                   <p className="text-sm font-semibold text-gray-800 truncate">{task.title}</p>
                 </div>
-
-                {/* Course */}
-                <p className="text-xs text-gray-500 truncate">
-                  {task.courseName || "No course"}
-                </p>
+                
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <span className="truncate max-w-[120px]">{task.courseName}</span>
+                  <span>•</span>
+                  <span className={`capitalize ${typeColor[task.type]} px-1.5 rounded-md text-[10px]`}>
+                    {task.type}
+                  </span>
+                </div>
               </div>
 
-              {/* Right */}
+              {/* Right Side: Date/Time */}
               <div className="text-right flex-shrink-0">
-                <p className={`text-xs font-medium ${status.color}`}>
+                <p className={`text-xs font-bold ${status.color}`}>
                   {status.label}
                 </p>
-
-                {dueDate && status.label !== "Overdue" && (
-                  <p className="text-[11px] text-gray-400">
-                    {dueDate.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                {dueDate && (
+                  <p className="text-[10px] text-gray-400 mt-0.5">
+                    {dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 )}
               </div>
