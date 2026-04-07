@@ -14,7 +14,7 @@ export default function DashboardLayout({ left, right }) {
   const { courses, loading, error } = useCourses(user?.id);
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-100">
       <Header />
       
       <TopBar onAddTask={() => setIsModalOpen(true)} />

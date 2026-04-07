@@ -18,7 +18,7 @@ export default function TopBar({ onAddTask}) {
       <div className="flex items-center gap-2">
         <button
           onClick={onAddTask}
-          className="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-700 transition"
+          className="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 transition disabled:opacity-50"
         >
           + Add Task
         </button>

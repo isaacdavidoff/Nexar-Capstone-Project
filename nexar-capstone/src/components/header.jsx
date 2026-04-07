@@ -19,6 +19,7 @@ export default function Header() {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   };
+  
 
   const isLoading = user === undefined;
 
@@ -29,7 +30,7 @@ export default function Header() {
           <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-violet-500 text-white">
             🎓
           </div>
-          <h1 className="text-lg font-semibold">StudyFlow</h1>
+          <h1 className="text-lg font-semibold">Nexar</h1>
         </div>
 
         <nav className="hidden md:flex items-center gap-6">
@@ -49,12 +50,23 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-   
-          <div className="w-9 h-9 rounded-full bg-violet-600 text-white flex items-center justify-center text-sm font-semibold uppercase">
-            {isLoading
-              ? "..."
-              : user?.name?.[0] || "U"}
-          </div>
+          <Link href="/useraccount">
+            <div className="w-9 h-9 rounded-full overflow-hidden bg-violet-600 flex items-center justify-center text-white text-sm font-semibold uppercase hover:bg-violet-700 transition cursor-pointer">
+              
+              {isLoading ? (
+                "..."
+              ) : user?.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                user?.name?.[0] || "U"
+              )}
+
+            </div>
+          </Link>
         </div>
       </div>
     </header>

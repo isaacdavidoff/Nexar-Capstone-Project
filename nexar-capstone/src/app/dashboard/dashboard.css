@@ -83,7 +83,9 @@ body {
 	align-items: center;
 	justify-content: center;
 	font-weight: bold;
+	
 }
+
 
 .profileName {
 	font-weight: bold;
@@ -110,7 +112,7 @@ body {
 }
 
 .addButton {
-	background: #5b4df5;
+	background: #f54d4d;
 	color: white;
 	border: none;
 	padding: 12px 22px;

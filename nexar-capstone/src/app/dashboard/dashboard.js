@@ -10,18 +10,18 @@ export default function Dashboard() {
 
 				<div className="logoWrap">
 					<div className="logoBox">🎓</div>
-					<h1 className="logoText">StudyFlow</h1>
+					<h1 className="logoText">Nexar</h1>
 				</div>
 
 				<nav className="nav">
-					<span className="activeNav">Dashboard</span>
+					<span className="activeNav">pooping</span>
 					<span className="navItem">Courses</span>
 					<span className="navItem">Focus</span>
 					<span className="navItem">Reports</span>
 				</nav>
 
 				<div className="profileWrap">
-					<div className="avatar">JD</div>
+					<button className="avatar">JD</button>
 					<div>
 						<div className="profileName">Jane Doe</div>
 						<div className="profileRole">Student</div>
