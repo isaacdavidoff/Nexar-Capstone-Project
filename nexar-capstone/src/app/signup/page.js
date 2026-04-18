@@ -1,116 +1,108 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { signUp } from "@/services/auth";
+import { useEffect, useState } from "react";
+import FocusCard from "@/components/focusCard";
+import FocusTimer from "@/components/focusTimer";
 
-export default function SignupPage() {
-  const router = useRouter();
+import { db } from "@/lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
 
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
+export default function Focus() {
+  const [tasks, setTasks] = useState([]);
+  const [bestTask, setBestTask] = useState(null);
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [session, setSession] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(0);
 
-  const handleChange = (e) => {
-    setForm((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+  const getDueDate = (task) => {
+    if (!task?.dueDate) return null;
+    if (task.dueDate?.toDate) return task.dueDate.toDate();
+    if (task.dueDate?.seconds)
+      return new Date(task.dueDate.seconds * 1000);
+    return new Date(task.dueDate);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    setLoading(true);
-    setError("");
-
-    try {
-      const { data, error: signUpError } = await signUp(form);
-
- 
-      if (signUpError) {
-        setError(signUpError);
-        setLoading(false);
-        return;
-      }
-
-     
-      if (data) {
-        router.push("/dashboard"); 
-        return;
-      }
-
-    } catch (err) {
-      setError(err.message || "Something went wrong");
-    } finally {
-      setLoading(false); 
+  const priorityScore = (priority) => {
+    switch (priority) {
+      case "High":
+        return 3;
+      case "Medium":
+        return 2;
+      case "Low":
+        return 1;
+      default:
+        return 0;
     }
   };
 
+  const pickBestTask = (tasks) => {
+    const now = new Date();
+
+    return [...tasks].sort((a, b) => {
+      const dueA = getDueDate(a);
+      const dueB = getDueDate(b);
+
+
+      const overdueA = dueA && dueA < now;
+      const overdueB = dueB && dueB < now;
+      if (overdueA !== overdueB) return overdueB - overdueA;
+
+
+      if (dueA && dueB) {
+        if (dueA.getTime() !== dueB.getTime()) {
+          return dueA - dueB;
+        }
+      }
+
+      const pDiff = priorityScore(b.priority) - priorityScore(a.priority);
+      if (pDiff !== 0) return pDiff;
+
+
+      return (a.estimatedTime || 999) - (b.estimatedTime || 999);
+    })[0];
+  };
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      const snapshot = await getDocs(collection(db, "tasks"));
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setTasks(data);
+      setBestTask(pickBestTask(data));
+    };
+
+    fetchTasks();
+  }, []);
+
+
+  const handleStartFocus = (task) => {
+    const duration = task.estimatedTime || 25;
+
+    setSession({
+      task,
+      duration,
+    });
+
+    setTimeLeft(duration * 60);
+  };
+
+  const handleCancel = () => {
+    setSession(null);
+    setTimeLeft(0);
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md bg-white p-6 rounded-xl shadow">
-        
-        <h1 className="text-2xl font-semibold mb-6 text-center">
-          Create Account
-        </h1>
+    <div className="p-4 space-y-4">
+      <FocusCard task={bestTask} onStartFocus={handleStartFocus} />
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4" disabled={loading}>
-          
-          <input
-            name="name"
-            placeholder="Full Name"
-            onChange={handleChange}
-            required
-            className="border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-
-          <input
-            name="email"
-            type="email"
-            placeholder="Email"
-            onChange={handleChange}
-            required
-            className="border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-
-          <input
-            name="password"
-            type="password"
-            placeholder="Password"
-            onChange={handleChange}
-            required
-            minLength={6}
-            className="border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-
-          <button
-            disabled={loading}
-            className="bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-          >
-            {loading ? "Creating..." : "Create Account"}
-          </button>
-
-          {error && (
-            <p className="text-red-500 text-sm text-center">{error}</p>
-          )}
-        </form>
-
-        <p className="mt-4 text-sm text-center text-gray-600">
-          Already have an account?{" "}
-          <span
-            onClick={() => router.push("/login")}
-            className="text-blue-600 cursor-pointer hover:underline"
-          >
-            Login
-          </span>
-        </p>
-      </div>
+      <FocusTimer
+        session={session}
+        timeLeft={timeLeft}
+        onCancel={handleCancel}
+      />
     </div>
   );
 }
