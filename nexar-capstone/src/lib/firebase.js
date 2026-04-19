@@ -1,17 +1,19 @@
 import { initializeApp } from "firebase/app";
 import{ getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    apiKey:"AIzaSyADvNo2ZwD7Ff6B8Ovd3Sr_ws2wKSbvv4I",
+    authDomain:"nexar-ap.firebaseapp.com",
+    projectId: "nexar-ap",
+    storageBucket:"nexar-ap.firebasestorage.app",
+    messagingSenderId:"538236174864",
+    appId: "1:538236174864:web:8dc8f1d77d19da63a2c095",
     };
 
 const app = initializeApp(firebaseConfig);
+export const storage = getStorage(app);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);

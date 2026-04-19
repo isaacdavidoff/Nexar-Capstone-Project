@@ -22,7 +22,7 @@ export default function DashboardLayout({ left, right, selectedTask, clearSelect
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-100">
       <Header />
       <TopBar onAddTask={() => setIsAddModalOpen(true)} />
 
