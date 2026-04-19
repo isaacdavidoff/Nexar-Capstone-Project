@@ -18,13 +18,18 @@ export default function useAuthUser() {
         unsubscribeUser = null;
       }
 
-      if (currentUser?.uid) {
-        unsubscribeUser = subscribeToUser(currentUser.uid, (userDoc) => {
-          setUser(userDoc);
-        });
-      } else {
-        setUser(null);
-      }
+      // src/hooks/useAuth.js
+if (currentUser?.uid) {
+  unsubscribeUser = subscribeToUser(currentUser.uid, (userDoc) => {
+    // Merge the Auth UID with the Firestore document data
+    setUser({
+      ...userDoc,
+      uid: currentUser.uid // Force the UID into the object
+    });
+  });
+} else {
+  setUser(null);
+}
     });
 
     return () => {

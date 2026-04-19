@@ -23,11 +23,17 @@ export default function useFocusSession() {
 
   //  Start session
   const startSession = async (task, duration = 25) => {
-    if (!user) return;
+    
+    const actualUid = user?.uid || user?.id || user?.userId;
 
+  if (!actualUid) {
+    console.error("User ID not found in user object:", user);
+    return;
+  }
+    
     try {
       const sessionId = await createSession({
-        userId: user.uid, // Ensure this matches your auth hook's property
+        userId: user.id, // Ensure this matches your auth hook's property
         taskId: task.id,
         duration,
       });

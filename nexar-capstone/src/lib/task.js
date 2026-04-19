@@ -196,11 +196,19 @@ export const getTasksByStatus = async (userId, status) => {
 
 export const updateTask = async (taskId, updates) => {
   const docRef = doc(db, "tasks", taskId);
+  
+  const finalUpdates = { ...updates, updatedAt: Timestamp.now() };
 
-  return await updateDoc(docRef, {
-    ...updates,
-    updatedAt: Timestamp.now(),
-  });
+  // Sync dueDateDay if the dueDate is being changed
+  if (updates.dueDate) {
+    const d = new Date(updates.dueDate);
+    if (!isNaN(d.getTime())) {
+      finalUpdates.dueDate = Timestamp.fromDate(d);
+      finalUpdates.dueDateDay = d.toISOString().split("T")[0];
+    }
+  }
+
+  return await updateDoc(docRef, finalUpdates);
 };
 
 export const deleteTask = async (taskId) => {

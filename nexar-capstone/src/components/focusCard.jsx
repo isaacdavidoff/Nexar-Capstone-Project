@@ -50,7 +50,7 @@ export default function FocusCard({ task, onStartFocus }) {
           {task.estimatedTime} mins • {task.courseName}
         </p>
 
-        <p className={`text-xs font-medium mt-1 ${urgency.color}`}>
+        <p className={`text-xs font-medium mt-1 text-white/90 ${urgency.color}`}>
           {urgency.label}
         </p>
         <span className="text-[10px] px-2 py-0.5 rounded bg-white/20">
@@ -60,7 +60,8 @@ export default function FocusCard({ task, onStartFocus }) {
 
       <button
   onClick={() => onStartFocus(task)}
-  className="w-full bg-white text-purple-700 py-2 rounded-lg text-sm font-semibold"
+  disabled={!task?.id}
+  className="w-full bg-white text-purple-700 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 hover:bg-white/90 transition"
 >
   Start Focus Session
 </button>

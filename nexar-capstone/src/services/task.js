@@ -7,22 +7,25 @@ export const getOverdueTasks = (tasks, now = new Date()) => {
   });
 };
   
-  export const getUpcomingTasks = (tasks, now = new Date()) => {
-    
-    const nextWeek = cloneDate(now);
-    nextWeek.setDate(now.getDate() + 7);
-  
-    return tasks
-    .filter((task) => {
-      const due = toDate(task.dueDate);
-      return (
-        task.status !== "completed" &&
-        due &&
-        due >= now &&
-        due <= nextWeek
-      );
-    })
-    .sort((a, b) => toDate(a.dueDate) - toDate(b.dueDate));
+export const getUpcomingTasks = (tasks, now = new Date()) => {
+  // Set to start of day (00:00:00) to ensure "Today" stays in "Upcoming"
+  const startOfToday = cloneDate(now);
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const nextWeek = cloneDate(startOfToday);
+  nextWeek.setDate(startOfToday.getDate() + 7);
+
+  return tasks
+  .filter((task) => {
+    const due = toDate(task.dueDate);
+    return (
+      task.status !== "completed" &&
+      due &&
+      due >= startOfToday && // Better for UX
+      due <= nextWeek
+    );
+  })
+  .sort((a, b) => toDate(a.dueDate) - toDate(b.dueDate));
 };
   
   export const getTodayTasks = (tasks) => {
