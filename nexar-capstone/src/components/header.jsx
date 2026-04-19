@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import useAuthUser from "@/hooks/useAuth";
+import Image from "next/image";
+import Logo from "@/assets/logonexar.png";
 
 export default function Header() {
   const pathname = usePathname();
@@ -26,10 +28,8 @@ export default function Header() {
     <header className="w-full border-b bg-white sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 flex items-center justify-center rounded-lg bg-violet-500 text-white">
-            🎓
-          </div>
-          <h1 className="text-lg font-semibold">StudyFlow</h1>
+          <Image src={Logo} alt="Nexar Logo" width={100} height={24} className="hidden sm:block w-8 h-8" />
+          <h2 className="font-semibold text-2xl text--500" >Nexar</h2>
         </div>
 
         <nav className="hidden md:flex items-center gap-6">

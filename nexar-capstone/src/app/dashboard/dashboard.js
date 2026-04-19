@@ -1,4 +1,5 @@
 import "./dashboard.css";
+import Image from "next/image";
 
 export default function Dashboard() {
 
@@ -10,7 +11,7 @@ export default function Dashboard() {
 
 				<div className="logoWrap">
 					<div className="logoBox">🎓</div>
-					<h1 className="logoText">StudyFlow</h1>
+					<Image src="/logonexar.png" alt="Nexar Logo" width={100} height={24} />
 				</div>
 
 				<nav className="nav">
