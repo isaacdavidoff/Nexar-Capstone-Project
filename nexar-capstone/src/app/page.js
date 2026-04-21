@@ -10,7 +10,7 @@ export default function LandingPage() {
       <nav className="flex items-center justify-between px-6 py-6 max-w-7xl mx-auto">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl">
-            N
+            <img src ="/icon.png"/>
           </div>
           <span className="text-xl font-black tracking-tighter">Nexar</span>
         </div>
