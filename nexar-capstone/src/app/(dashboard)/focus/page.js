@@ -27,7 +27,7 @@ export default function FocusPage() {
   const [tasks, setTasks] = useState([]);
   const [selectedTask, setSelectedTask] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const [startTime, setStartTime] = useState(null);
   // Fetch ONLY current user's tasks
   useEffect(() => {
     if (!user) return;
@@ -128,8 +128,8 @@ export default function FocusPage() {
         timeLeft={timeLeft}
         isPaused={isPaused}          // Now reactive to global hook
         onTogglePause={togglePause}  // Now reactive to global hook
-        onCancel={cancelSession}
-        onComplete={() => completeSession(true)}
+        onCancel={() => cancelSession(activeSession)} // saving context 
+        onComplete={() => completeSession(true, activeSession)}// saving context  
       />
     </div>
   );

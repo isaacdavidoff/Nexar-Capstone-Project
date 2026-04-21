@@ -12,7 +12,7 @@ export default function Header() {
     { name: "Dashboard", href: "/dashboard" },
     { name: "Courses", href: "/courses" },
     { name: "Focus", href: "/focus" },
-    { name: "Reports", href: "/reports" },
+    { name: "Reports", href: "/report" },
   ];
 
   const isActive = (href) => {

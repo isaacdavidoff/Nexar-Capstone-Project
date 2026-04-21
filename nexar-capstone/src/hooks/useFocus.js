@@ -10,7 +10,7 @@ export default function useFocusSession() {
   const [activeSession, setActiveSession] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-
+  
   const timerRef = useRef(null);
   const startTimeRef = useRef(null);
   const expectedEndRef = useRef(null);
@@ -35,10 +35,14 @@ export default function useFocusSession() {
     try {
       const customDuration = Number(duration);
       const finalDuration = Number(customDuration || task.estimatedTime || 25);
+
       const sessionId = await createSession({
         userId: actualUid,
         taskId: task.id,
         duration: finalDuration,
+        title: task.title,
+        plannedDuration: finalDuration,
+        startedAt: Date.now(),
       });
 
       const seconds = finalDuration * 60;
@@ -72,7 +76,7 @@ export default function useFocusSession() {
     }
   }, [activeSession, isPaused, timeLeft]);
 
-  const endSession = useCallback(async (status) => {
+  const endSession = useCallback(async (status, taskFinished = false) => {
     if (!activeSession || !user) return;
   
     const sessionId = activeSession.id;
@@ -86,8 +90,12 @@ export default function useFocusSession() {
   
     try {
       // 1. Always finalize the session log so the user gets credit for their time
-      await finalizeSession(actualUid, sessionId, elapsedMinutes);
-  const taskFinished = status === "completed";
+        await finalizeSession(actualUid, sessionId, {
+          actualDuration: elapsedMinutes,
+          endedAt: Date.now(),
+          status,
+        });
+
       // 2. Only update the actual Task status if the user says they are done
       if (taskFinished && taskId) {
         await updateTask(taskId, { status: 'completed', isCompleted: true });
@@ -104,7 +112,7 @@ export default function useFocusSession() {
     expectedEndRef.current = null;
   }, [activeSession, user]);
 
-  const cancelSession = () => endSession("abandoned");
+  const cancelSession = () => endSession("abandoned", false);
   const completeSession = useCallback((taskFinished = false) => 
     endSession("completed", taskFinished), [endSession]);
 
