@@ -1,4 +1,14 @@
+import { Timestamp } from "firebase/firestore";
+
 const cloneDate = (date) => new Date(date.getTime());
+
+export const toDate = (value) => {
+  if (!value) return null;
+  if (value.toDate) return value.toDate(); 
+  if (value.seconds) return new Date(value.seconds * 1000);
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+};
 
 export const getOverdueTasks = (tasks, now = new Date()) => {
   return tasks.filter((task) => {
@@ -119,46 +129,33 @@ export const sortTasksByPriority = (tasks) => {
   });
 };
   
-  export const getFocusRecommendation = (tasks) => {
-    const now = new Date();
-  
-    const activeTasks = tasks.filter(
-      (t) => t.status !== "completed"
-    );
-  
-    if (activeTasks.length === 0) return null;
-  
-    const scored = activeTasks.map((task) => {
-      const due = toDate(task.dueDate);
-  
-      const daysLeft = due
-        ? Math.max((due - now) / (1000 * 60 * 60 * 24), 0)
-        : 999;
+export const getFocusRecommendation = (tasks) => {
+  const now = new Date(); // Use JS Date for math
 
-        if (!due) return { ...task, score: -1 };
-  
-      const urgencyScore = 1 / (daysLeft + 1);
-      const effortScore = (task.estimatedTime || 60) / 60;
-  
-      const score = urgencyScore * 0.7 + effortScore * 0.3;
-  
-      return { ...task, score };
-    });
-  
-    return scored.sort((a, b) => b.score - a.score)[0];
-  };
+  const activeTasks = tasks.filter(isActive);
+  if (activeTasks.length === 0) return null;
 
+  const scored = activeTasks.map((task) => {
+    const due = toDate(task.dueDate);
+    if (!due) return { ...task, score: -1 };
 
-export const toDate = (value) => {
-  if (!value) return null;
- 
-  if (value.toDate) return value.toDate(); 
+    // Calculate days left using consistent units (milliseconds)
+    const diffInMs = due.getTime() - now.getTime();
+    const daysLeft = Math.max(diffInMs / (1000 * 60 * 60 * 24), 0);
 
-  if (value.seconds) return new Date(value.seconds * 1000);
-  
-  const d = new Date(value);
-  return isNaN(d.getTime()) ? null : d;
+    const urgencyScore = 1 / (daysLeft + 0.1); // Small offset to avoid infinity
+    const effortScore = (Number(task.estimatedTime) || 60) / 60;
+
+    // Weight: 70% Urgency, 30% Effort
+    const score = urgencyScore * 0.7 + effortScore * 0.3;
+
+    return { ...task, score };
+  });
+
+  return scored.sort((a, b) => b.score - a.score)[0];
 };
+
+
 
 export const groupTasksByDate = (tasks) => {
   const map = {};
@@ -176,3 +173,28 @@ export const groupTasksByDate = (tasks) => {
   
   return map;
 };
+
+/**
+ * Client-side helper to calculate priority score
+ * @param {Array} tasks 
+ */
+export const sortTasksBySmartPriority = (tasks) => {
+  const now = new Date().getTime();
+  
+  return [...tasks].sort((a, b) => {
+    const dateA = toDate(a.dueDate);
+    const dateB = toDate(b.dueDate);
+    if (!dateA || !dateB) return 0;
+
+    const timeDiffA = Math.max(dateA.getTime() - now, 3600000); // Floor at 1 hour
+    const timeDiffB = Math.max(dateB.getTime() - now, 3600000);
+
+    const scoreA = (priorityToWeight(a.priority)) / (timeDiffA / 3600000);
+    const scoreB = (priorityToWeight(b.priority)) / (timeDiffB / 3600000);
+
+    return scoreB - scoreA;
+  });
+};
+
+// Helper for weights
+const priorityToWeight = (p) => ({ high: 3, medium: 2, low: 1 }[p] || 1);

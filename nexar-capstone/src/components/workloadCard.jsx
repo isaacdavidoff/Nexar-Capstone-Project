@@ -8,78 +8,78 @@ export default function WorkloadCard({ workload = {}, loading }) {
     upcoming = 0,
   } = workload;
 
-  return (
-    <section className="bg-white p-5 rounded-xl shadow-sm " aria-labelledby="workload-heading">
-      
+  // Determine status color for text and bars
+  const getStatusColor = () => {
+    if (percent > 80) return "text-red-600 bg-red-500";
+    if (percent > 50) return "text-orange-600 bg-orange-500";
+    return "text-indigo-600 bg-indigo-600";
+  };
 
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-semibold">Weekly Workload</h2>
+  const [textColor, barColor] = getStatusColor().split(" ");
+
+  return (
+    <section 
+      className="bg-white p-6 rounded-2xl shadow-sm border border-neutral-100 h-full" 
+      aria-labelledby="workload-heading"
+    >
+      <div className="flex items-center justify-between mb-2">
+        <h2 id="workload-heading" className="font-bold text-neutral-900 tracking-tight">
+          Workload Analysis
+        </h2>
         {!loading && (
-          <span className="text-xs text-gray-400">
-            {percent}% capacity
+          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-neutral-50 ${textColor}`}>
+            {percent}% Cap
           </span>
         )}
       </div>
 
-  
-      {loading && (
-        <div className="space-y-3">
-          <div className="h-3 bg-gray-100 rounded animate-pulse" />
-          <div className="h-16 bg-gray-100 rounded animate-pulse" />
+      {loading ? (
+        <div className="space-y-4 py-2">
+          <div className="h-4 bg-neutral-100 rounded-full animate-pulse w-full" />
+          <div className="grid grid-cols-3 gap-4">
+            <div className="h-10 bg-neutral-50 rounded-lg animate-pulse" />
+            <div className="h-10 bg-neutral-50 rounded-lg animate-pulse" />
+            <div className="h-10 bg-neutral-50 rounded-lg animate-pulse" />
+          </div>
         </div>
-      )}
-
-      {!loading && (
+      ) : (
         <>
-   
-          <div className="w-full bg-gray-200 rounded-full h-3 mb-3 overflow-hidden">
+          <p className="text-xs text-neutral-500 mb-4 font-medium">
+            {percent === 0
+              ? "Your schedule is clear for now. Enjoy the break! ✨"
+              : percent > 80
+              ? "High workload detected. Prioritize urgent tasks. ⚠️"
+              : "Your schedule looks manageable. Stay focused! 🚀"}
+          </p>
+
+          <div className="w-full bg-neutral-100 rounded-full h-2.5 mb-6 overflow-hidden">
             <div
-              className={`h-3 rounded-full transition-all ${
-                percent > 80
-                  ? "bg-red-500"
-                  : percent > 50
-                  ? "bg-orange-500"
-                  : "bg-blue-600"
-              }`}
+              className={`h-full rounded-full transition-all duration-1000 ease-out ${barColor}`}
               style={{ width: `${Math.min(percent, 100)}%` }}
             />
           </div>
 
-      
-          <p className="text-sm text-gray-600 mb-4">
-  {percent === 0
-    ? "You're free this week 🎉 "
-    : percent > 80
-    ? "You're overloaded ⚠️"
-    : "You're on track 👍 "}
-</p>
-
-        
-          <hr className="my-3 border-neutral-200" />
-
-          <div className="grid grid-cols-3 text-center text-sm">
-            
-            <div>
-              <p className="text-gray-400 text-xs">Today</p>
-              <p className="font-semibold text-neutral-800">
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-100/50 text-center">
+              <p className="text-[10px] text-neutral-400 font-bold uppercase mb-1">Today</p>
+              <p className={`text-lg font-black ${dueToday > 0 ? 'text-neutral-900' : 'text-neutral-300'}`}>
                 {dueToday}
               </p>
             </div>
 
-            <div>
-              <p className="text-gray-400 text-xs">This Week</p>
-              <p className="font-semibold text-neutral-800">
+            <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-100/50 text-center">
+              <p className="text-[10px] text-neutral-400 font-bold uppercase mb-1">Week</p>
+              <p className="text-lg font-black text-neutral-900">
                 {dueThisWeek}
               </p>
             </div>
 
-            <div>
-              <p className="text-gray-400 text-xs">Upcoming</p>
-              <p className="font-semibold text-neutral-800">
+            <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-100/50 text-center">
+              <p className="text-[10px] text-neutral-400 font-bold uppercase mb-1">Next</p>
+              <p className="text-lg font-black text-neutral-900">
                 {upcoming}
               </p>
             </div>
-
           </div>
         </>
       )}

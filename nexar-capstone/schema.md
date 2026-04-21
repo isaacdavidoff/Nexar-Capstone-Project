@@ -42,6 +42,12 @@ Stores authenticated user information.
   "name": "string",
   "email": "string",
   "role": "user",
+  "stats": {
+    "totalFocusMinutes": "number",
+    "completedTasksCount": "number",
+    "currentStreak": "number",
+    "lastActiveDate": "timestamp"
+  },
   "createdAt": "timestamp"
 }
 ```
@@ -97,7 +103,8 @@ Core collection storing all academic deadlines.
   "estimatedTime":"string",
   "isCompleted":"boolean",
   "notes": "string",
-
+  "priorityWeight": "number (1 for Low, 2 for Medium, 3 for High)",
+  "estimatedMinutes": "number (convert from string 'estimatedTime')",
   "createdAt": "timestamp",
   "updatedAt": "timestamp"
 }
@@ -138,6 +145,19 @@ Stores reminder notifications for each task.
   "endedAt": "timestamp",
 
   "createdAt": "timestamp"
+}
+```
+
+## Daily Summary
+
+```json
+{
+  "logId": "string (format: userId_YYYY-MM-DD)",
+  "userId": "string",
+  "date": "timestamp",
+  "totalFocusMinutes": "number",
+  "tasksFinished": "number",
+  "workloadScore": "number (calculated logic)"
 }
 ```
 

@@ -8,27 +8,11 @@ import {
   getDocs,
   onSnapshot,
   orderBy,
+  writeBatch
 } from "firebase/firestore";
 import { db } from "./firebase";
 
-/**
- * Create a new user document in Firestore
- * @param {Object} user - { userId, name, email, role }
- */
-export const createUser = async (user) => {
-  try {
-    await setDoc(doc(db, "users", user.userId), {
-      name: user.name,
-      email: user.email,
-      role: user.role || "user",
-      createdAt: new Date(),
-    });
-    console.log("User created in Firestore:", user.userId);
-  } catch (error) {
-    console.error("Error creating user in Firestore:", error);
-    throw error;
-  }
-};
+
 
 /**
  * Delete a user document in Firestore
@@ -67,6 +51,21 @@ export const deleteUserData = async (userId) => {
   );
 };
 
+export const deleteAllUserData = async (userId) => {
+  const batch = writeBatch(db);
+  // Matches your latest schema additions
+  const collections = ["tasks", "courses", "focusSession", "dailySummary"]; 
+
+  for (const col of collections) {
+    const q = query(collection(db, col), where("userId", "==", userId));
+    const snapshot = await getDocs(q);
+
+    snapshot.docs.forEach((docSnap) => {
+      batch.delete(docSnap.ref); // Cleaner: uses the reference directly
+    });
+  }
+  return await batch.commit();
+};
 /**
  * Subscribe to real-time task updates for a user
  * @param {string} userId
@@ -131,6 +130,7 @@ export const subscribeToOverdueTasks = (userId, callback) => {
     collection(db, "tasks"),
     where("userId", "==", userId),
     where("dueDate", "<", now),
+    where("isCompleted", "==", false),
     orderBy("dueDate", "asc")
   );
 
@@ -139,7 +139,21 @@ export const subscribeToOverdueTasks = (userId, callback) => {
       id: doc.id,
       ...doc.data(),
     }));
+    callback(tasks);
+  });
+};
 
+export const subscribeToWeeklyTasks = (userId, startDate, endDate, callback) => {
+  const q = query(
+    collection(db, "tasks"),
+    where("userId", "==", userId),
+    where("dueDate", ">=", startDate),
+    where("dueDate", "<=", endDate),
+    orderBy("dueDate", "asc")
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     callback(tasks);
   });
 };

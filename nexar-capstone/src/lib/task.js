@@ -9,11 +9,12 @@ import {
   where,
   orderBy,
   Timestamp,
+  writeBatch,
+  onSnapshot
 } from "firebase/firestore";
 
 import { db } from "./firebase";
 
-import { onSnapshot } from "firebase/firestore";
 
 export const subscribeToTasks = (userId, callback) => {
   if (!userId) return () => {};
@@ -108,7 +109,9 @@ export const addTask = async (task) => {
     dueDateDay: date.toISOString().split("T")[0],
 
     priority: task.priority || "medium",
+  priorityWeight: task.priority === "high" ? 3 : task.priority === "low" ? 1 : 2,
     estimatedTime: task.estimatedTime || 60,
+    estimatedMinutes: Number(task.estimatedTime) || 60,
 
     notes: task.notes || "",
 
@@ -215,14 +218,38 @@ export const deleteTask = async (taskId) => {
   return await deleteDoc(doc(db, "tasks", taskId));
 };
 
+
 export const deleteTasksByUser = async (userId) => {
   const q = query(collection(db, "tasks"), where("userId", "==", userId));
-
   const snapshot = await getDocs(q);
+  const batch = writeBatch(db);
 
-  const deletions = snapshot.docs.map((docSnap) =>
-    deleteDoc(doc(db, "tasks", docSnap.id))
+  snapshot.docs.forEach((docSnap) => {
+    batch.delete(docSnap.ref);
+  });
+
+  await batch.commit();
+};
+
+/**
+ * Deletes all tasks associated with a specific course.
+ * Useful for cascading deletes when a course is removed.
+ */
+export const deleteTasksByCourse = async (courseId) => {
+  if (!courseId) return;
+
+  const q = query(
+    collection(db, "tasks"), 
+    where("courseId", "==", courseId)
   );
+  
+  const snapshot = await getDocs(q);
+  const batch = writeBatch(db);
 
-  await Promise.all(deletions);
+  snapshot.docs.forEach((docSnap) => {
+    batch.delete(docSnap.ref);
+  });
+
+  await batch.commit();
+  console.log(`Successfully deleted ${snapshot.size} tasks for course: ${courseId}`);
 };

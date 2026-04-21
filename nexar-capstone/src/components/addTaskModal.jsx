@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import useAuthUser from "@/hooks/useAuth";
 import { addTask, updateTask } from "@/lib/task";
 import { formatDateInput } from "@/lib/dateFormat";
+import { Timestamp } from "firebase/firestore";
 
 export default function AddTaskModal({ isOpen, onClose, courses = [], existingTask = null }) {
   const user = useAuthUser();
@@ -24,23 +25,19 @@ export default function AddTaskModal({ isOpen, onClose, courses = [], existingTa
 
   const [form, setForm] = useState(initialFormState);
 
-useEffect(() => {
-  if (existingTask) {
-    setForm({
-      title: existingTask.title || "",
-      courseId: existingTask.courseId || "",
-      courseName: existingTask.courseName || "",
-      courseColor: existingTask.courseColor || "",
-      dueDate: formatDateInput(existingTask.dueDate) || "",
-      type: existingTask.type || "assignment",
-      priority: existingTask.priority || "medium",
-      estimatedTime: existingTask.estimatedTime || 60,
-      notes: existingTask.notes || "",
-    });
-  } else {
-    setForm(initialFormState);
-  }
-}, [existingTask, initialFormState]);
+  // Sync form state when modal opens or existingTask changes
+  useEffect(() => {
+    if (isOpen) {
+      if (existingTask) {
+        setForm({
+          ...existingTask,
+          dueDate: formatDateInput(existingTask.dueDate) || "",
+        });
+      } else {
+        setForm(initialFormState);
+      }
+    }
+  }, [isOpen, existingTask, initialFormState]);
 
   if (!isOpen) return null;
 
@@ -48,10 +45,10 @@ useEffect(() => {
     const { name, value } = e.target;
 
     if (name === "courseId") {
-      const selected = courses.find((c) => c.courseId === value);
+      const selected = courses.find((c) => (c.id || c.courseId) === value);
       setForm((prev) => ({
         ...prev,
-        courseId: selected?.courseId || "",
+        courseId: value,
         courseName: selected?.courseName || "",
         courseColor: selected?.color || "",
       }));
@@ -63,36 +60,43 @@ useEffect(() => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!user?.id) {
-      alert("You must be logged in to manage tasks.");
+    const actualUid = user?.uid || user?.id;
+
+    if (!actualUid) {
+      alert("Session expired. Please log in.");
       return;
     }
 
     if (!form.courseId) {
-      alert("Please select a course for this task.");
+      alert("Please assign this task to a course.");
       return;
     }
 
     try {
       setLoading(true);
-      
+      const dateObj = new Date(form.dueDate);
       const taskData = {
         ...form,
-        userId: user.id,
-        estimatedTime: parseInt(form.estimatedTime) || 0,
-        dueDate: new Date(form.dueDate).toISOString(), 
+        userId: actualUid,
+        estimatedTime: parseInt(form.estimatedTime, 10) || 0,
+        dueDate: Timestamp.fromDate(dateObj),
+        updatedAt: Timestamp.now(),
+        status: existingTask?.status || "pending" // Preserve status on edit
       };
 
       if (isEdit) {
         await updateTask(existingTask.id, taskData);
       } else {
-        await addTask(taskData);
+        await addTask({
+          ...taskData,
+          createdAt: Timestamp.now(),
+        });
       }
 
       onClose();
     } catch (err) {
       console.error("Task Action Error:", err);
-      alert("Failed to save task. Please try again.");
+      alert("Failed to save task.");
     } finally {
       setLoading(false);
     }
@@ -100,69 +104,74 @@ useEffect(() => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-neutral-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
-        className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden"
+        className="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50/50">
-          <h2 className="text-xl font-semibold text-gray-800">{isEdit ? "Edit Task" : "New Task"} </h2>
+        <div className="px-8 py-6 border-b border-neutral-100 flex justify-between items-center bg-neutral-50/50">
+          <div>
+            <h2 className="text-2xl font-black text-neutral-900">
+              {isEdit ? "Refine Task" : "Add Task"}
+            </h2>
+            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mt-0.5">
+              {isEdit ? "Updating your schedule" : "Create a new task"}
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-200 rounded-full transition text-gray-500"
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-neutral-200 transition text-neutral-400"
           >
             ✕
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-xs font-bold uppercase text-gray-500 mb-1 ml-1">
+        <form onSubmit={handleSubmit} className="p-8 space-y-5">
+          {/* Title Input */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest ml-1">
               Task Title
             </label>
             <input
               type="text"
               name="title"
-              placeholder="e.g., Study for Midterm"
+              placeholder="e.g., Final Project Proposal"
               value={form.title}
               onChange={handleChange}
               required
-              className="w-full border-gray-200 border rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-violet-500 focus:border-transparent outline-none transition"
+              autoFocus
+              className="w-full bg-neutral-50 border-2 border-neutral-100 rounded-2xl px-5 py-3 text-sm font-medium focus:border-indigo-500 focus:bg-white outline-none transition"
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold uppercase text-gray-500 mb-1 ml-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Course Select */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest ml-1">
                 Course
               </label>
               <select
                 name="courseId"
                 value={form.courseId}
                 onChange={handleChange}
-                className="w-full border-gray-200 border rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500"
+                className="w-full bg-neutral-50 border-2 border-neutral-100 rounded-2xl px-4 py-3 text-sm font-bold outline-none focus:border-indigo-500 transition"
                 required
               >
-                <option value="" disabled>
-                  Choose a course...
-                </option>
-                {courses.length === 0 ? (
-                  <option disabled>No courses yet</option>
-                ) : (
-                  courses.map((course) => (
-                    <option key={course.courseId} value={course.courseId}>
-                      {course.courseName}
-                    </option>
-                  ))
-                )}
+                <option value="" disabled>Select course...</option>
+                {courses.map((course) => (
+                  <option key={course.id || course.courseId} value={course.id || course.courseId}>
+                    {course.courseName}
+                  </option>
+                ))}
               </select>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold uppercase text-gray-500 mb-1 ml-1">
-                Due Date
+            {/* Date Input */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase text-neutral-400 tracking-widest ml-1">
+                Deadline
               </label>
               <input
                 type="datetime-local"
@@ -170,90 +179,51 @@ useEffect(() => {
                 value={form.dueDate}
                 onChange={handleChange}
                 required
-                className="w-full border-gray-200 border rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500"
+                className="w-full bg-neutral-50 border-2 border-neutral-100 rounded-2xl px-4 py-3 text-sm font-medium outline-none focus:border-indigo-500 transition"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="col-span-1">
-              <label className="block text-xs font-bold uppercase text-gray-500 mb-1 ml-1">
-                Type
-              </label>
-              <select
-                name="type"
-                value={form.type}
-                onChange={handleChange}
-                className="w-full border rounded-xl px-3 py-2 text-sm outline-none"
-              >
+          {/* Quick Settings Grid */}
+          <div className="grid grid-cols-3 gap-4 p-4 bg-neutral-50 rounded-2xl border-2 border-dashed border-neutral-200">
+            <div className="space-y-1">
+              <label className="text-[9px] font-black uppercase text-neutral-400">Type</label>
+              <select name="type" value={form.type} onChange={handleChange} className="w-full bg-transparent text-xs font-bold outline-none">
                 <option value="assignment">Assignment</option>
-                <option value="lab">Lab</option>
+                <option value="lab">Lab Work</option>
                 <option value="quiz">Quiz</option>
                 <option value="exam">Exam</option>
               </select>
             </div>
 
-            <div className="col-span-1">
-              <label className="block text-xs font-bold uppercase text-gray-500 mb-1 ml-1">
-                Priority
-              </label>
-              <select
-                name="priority"
-                value={form.priority}
-                onChange={handleChange}
-                className="w-full border rounded-xl px-3 py-2 text-sm outline-none"
-              >
+            <div className="space-y-1 border-x border-neutral-200 px-4">
+              <label className="text-[9px] font-black uppercase text-neutral-400">Priority</label>
+              <select name="priority" value={form.priority} onChange={handleChange} className="w-full bg-transparent text-xs font-bold outline-none">
                 <option value="low">Low</option>
-                <option value="medium">Med</option>
-                <option value="high">High</option>
+                <option value="medium">Normal</option>
+                <option value="high">Urgent</option>
               </select>
             </div>
 
-            <div className="col-span-1">
-              <label className="block text-xs font-bold uppercase text-gray-500 mb-1 ml-1">
-                Mins
-              </label>
+            <div className="space-y-1">
+              <label className="text-[9px] font-black uppercase text-neutral-400">Time (m)</label>
               <input
                 type="number"
                 name="estimatedTime"
                 value={form.estimatedTime}
                 onChange={handleChange}
-                min="0"
-                className="w-full border rounded-xl px-3 py-2 text-sm outline-none"
+                className="w-full bg-transparent text-xs font-bold outline-none"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold uppercase text-gray-500 mb-1 ml-1">
-              Notes
-            </label>
-            <textarea
-              name="notes"
-              value={form.notes}
-              onChange={handleChange}
-              rows="3"
-              placeholder="Add details..."
-              className="w-full border-gray-200 border rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-500"
-            />
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl font-medium hover:bg-gray-50 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-[2] bg-violet-600 text-white py-2.5 rounded-xl font-bold hover:bg-violet-700 transition disabled:opacity-50"
-            >
-              {loading ? isEdit ? "Updating..." : "Creating..." : isEdit ? "Update Task" : "Create Task"}
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-neutral-900 text-white py-4 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl active:scale-[0.98] disabled:opacity-50"
+          >
+            {loading ? "Syncing..." : isEdit ? "Update Schedule" : "Confirm Task"}
+          </button>
         </form>
       </div>
     </div>

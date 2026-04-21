@@ -6,7 +6,8 @@ import {
     deleteAuthUser,
   } from "@/lib/auth";
   
-  import { createUser, deleteUserDoc } from "@/lib/firestore";
+  import { deleteUserDoc, deleteAllUserData } from "@/lib/firestore";
+  import { createUser } from "@/lib/user";
   
   export const signUp = async ({ name, email, password }) => {
     try {
@@ -63,6 +64,7 @@ export const deleteAccount = async (user) => {
 
     await deleteUserDoc(userId);
     await deleteAuthUser(user);
+    await deleteAllUserData(userId);
 
     return { data: true, error: null };
 

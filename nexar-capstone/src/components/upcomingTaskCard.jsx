@@ -1,139 +1,124 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { toDate, sortTasksByPriority } from "@/services/task";
+import { toDate, sortTasksBySmartPriority } from "@/services/task";
 
-export default function UpcomingTasksCard({
-  tasks = [],
-  loading,
-  onEditTask,
-}) {
+export default function UpcomingTasksCard({ tasks = [], loading, onEditTask }) {
   const [now, setNow] = useState(new Date());
 
   const displayTasks = useMemo(() => {
-    return sortTasksByPriority(tasks).slice(0, 5);
+    // Only show pending tasks and limit to top 5 by priority/date
+    const pending = tasks.filter(t => t.status !== 'completed');
+    return sortTasksBySmartPriority(pending).slice(0, 5);
   }, [tasks]);
 
-  const typeColor = {
-    assignment: "bg-blue-100 text-blue-700",
-    lab: "bg-purple-100 text-purple-700",
-    quiz: "bg-yellow-100 text-yellow-700",
-    exam: "bg-red-100 text-red-700",
+  // Unified color mapping for categories
+  const typeStyles = {
+    assignment: "bg-blue-50 text-blue-600 border-blue-100",
+    lab: "bg-purple-50 text-purple-600 border-purple-100",
+    quiz: "bg-amber-50 text-amber-600 border-amber-100",
+    exam: "bg-rose-50 text-rose-600 border-rose-100",
+  };
+
+  const priorityStyles = {
+    high: "text-rose-600 bg-rose-50",
+    medium: "text-amber-600 bg-amber-50",
+    low: "text-emerald-600 bg-emerald-50",
   };
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setNow(new Date());
-    }, 60000);
-
+    const interval = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(interval);
   }, []);
 
   const getStatus = (date) => {
-    if (!date) return { label: "No date", color: "text-gray-400" };
-
+    if (!date) return { label: "No date", color: "text-neutral-400" };
     const diff = date - now;
     const days = diff / (1000 * 60 * 60 * 24);
 
-    if (date < now) return { label: "Overdue", color: "text-red-500" };
-    if (days < 1) return { label: "Today", color: "text-red-500" };
-    if (days < 2) return { label: "Tomorrow", color: "text-orange-500" };
+    if (date < now) return { label: "Overdue", color: "text-rose-500" };
+    if (days < 1) return { label: "Today", color: "text-rose-500 font-black" };
+    if (days < 2) return { label: "Tomorrow", color: "text-amber-500" };
 
     return {
-      label: date.toLocaleDateString(undefined, {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-      }),
-      color: "text-green-600",
+      label: date.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+      color: "text-neutral-500",
     };
   };
 
-  const priorityColor = {
-    high: "bg-red-100 text-red-600",
-    medium: "bg-yellow-100 text-yellow-600",
-    low: "bg-green-100 text-green-600",
-  };
-
   return (
-    <section
-      className="bg-white p-5 rounded-xl shadow-sm "
-      aria-labelledby="upcoming-heading"
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 id="upcoming-heading" className="font-semibold">
-          Upcoming Deadlines
-        </h2>
-
-        {!loading && tasks.length > 0 && (
-          <span className="text-xs text-gray-400">
-            {tasks.length} task{tasks.length > 1 ? "s" : ""}
+    <section className="bg-white p-6 rounded-2xl shadow-sm border border-neutral-100">
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="font-bold text-neutral-900 tracking-tight">Upcoming Deadlines</h2>
+        {!loading && (
+          <span className="text-[10px] font-black bg-neutral-100 text-neutral-500 px-2 py-0.5 rounded-full uppercase">
+            Top {displayTasks.length}
           </span>
         )}
       </div>
 
-      {/* Loading */}
-      {loading && (
-        <div className="space-y-2">
-          <div className="h-10 bg-gray-100 rounded animate-pulse" />
-          <div className="h-10 bg-gray-100 rounded animate-pulse" />
+      {loading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-14 bg-neutral-50 rounded-xl animate-pulse" />
+          ))}
         </div>
-      )}
-
-      {/* Empty */}
-      {!loading && tasks.length === 0 && (
-        <div className="text-center py-6 text-sm text-gray-500">
-          No upcoming tasks 🎉
+      ) : displayTasks.length === 0 ? (
+        <div className="py-8 text-center bg-neutral-50 rounded-2xl border border-dashed border-neutral-100">
+          <p className="text-sm text-neutral-400">All caught up! 🎉</p>
         </div>
-      )}
+      ) : (
+        <ul className="space-y-3">
+          {displayTasks.map((task) => {
+            const dueDate = toDate(task.dueDate);
+            const status = getStatus(dueDate);
+            const styles = typeStyles[task.type] || "bg-neutral-50 text-neutral-500";
 
-      {/* List */}
-      <ul className="space-y-2">
-        {displayTasks.map((task) => {
-          const dueDate = toDate(task.dueDate);
-          const status = getStatus(dueDate);
+            return (
+              <li
+                key={task.id}
+                onClick={() => onEditTask?.(task)}
+                className="group relative flex items-center justify-between gap-4 p-3.5 rounded-xl border border-neutral-50 bg-white hover:border-indigo-100 hover:shadow-md hover:shadow-indigo-50/50 transition-all cursor-pointer active:scale-[0.98]"
+              >
+                {/* Visual Course Indicator */}
+                <div 
+                  className="absolute left-0 top-1/4 bottom-1/4 w-1 rounded-r-full" 
+                  style={{ backgroundColor: task.courseColor || '#E5E5E5' }} 
+                />
 
-          return (
-            <li
-              onClick={() => onEditTask?.(task)}
-              key={task.id || task.taskId}
-              className="flex items-center justify-between gap-3 p-3 rounded-lg border border-transparent hover:border-violet-200 hover:bg-violet-50/30 transition cursor-pointer"
-            >
-              {/* Left Side: Task Info */}
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                   {/* Priority Badge */}
-                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${priorityColor[task.priority]}`}>
+                <div className="min-w-0 flex-1 pl-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm font-bold text-neutral-800 truncate group-hover:text-indigo-600 transition-colors">
+                      {task.title}
+                    </p>
+                    <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${priorityStyles[task.priority]}`}>
                       {task.priority}
-                   </span>
-                   <p className="text-sm font-semibold text-gray-800 truncate">{task.title}</p>
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider">
+                    <span className="text-neutral-400 truncate max-w-[100px]">{task.courseName}</span>
+                    <span className={`px-1.5 rounded-md border ${styles}`}>
+                      {task.type}
+                    </span>
+                  </div>
                 </div>
-                
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <span className="truncate max-w-[120px]">{task.courseName}</span>
-                  <span>•</span>
-                  <span className={`capitalize ${typeColor[task.type]} px-1.5 rounded-md text-[10px]`}>
-                    {task.type}
-                  </span>
-                </div>
-              </div>
 
-              {/* Right Side: Date/Time */}
-              <div className="text-right flex-shrink-0">
-                <p className={`text-xs font-bold ${status.color}`}>
-                  {status.label}
-                </p>
-                {dueDate && (
-                  <p className="text-[10px] text-gray-400 mt-0.5">
-                    {dueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                <div className="text-right">
+                  <p className={`text-[11px] font-black uppercase tracking-tight ${status.color}`}>
+                    {status.label}
                   </p>
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+                  {dueDate && (
+                    <p className="text-[10px] text-neutral-400 font-medium">
+                      {dueDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                    </p>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </section>
   );
 }
