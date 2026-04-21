@@ -1,10 +1,12 @@
 import ProtectedRoute from "@/components/protectedRoute";
 import Header from "@/components/header";
 import BottomNav from "@/components/bottomNav";
+import { TaskProvider } from "@/context/TaskContext";
 
 export default function AuthenticatedLayout({ children }) {
   return (
     <ProtectedRoute>
+      <TaskProvider>
       <div className="min-h-screen bg-neutral-50 flex flex-col">
         <Header />
     
@@ -14,6 +16,7 @@ export default function AuthenticatedLayout({ children }) {
 
         <BottomNav />
       </div>
+      </TaskProvider>
     </ProtectedRoute>
   );
 }

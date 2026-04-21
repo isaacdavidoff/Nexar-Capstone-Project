@@ -58,6 +58,12 @@ export const subscribeToUser = (userId, callback) => {
   });
 };
 
+export const deleteUserDoc = async (userId) => {
+  if (!userId) return;
+
+  const userRef = doc(db, "users", userId);
+  await deleteDoc(userRef);
+};
 
 export const updateUser = async (userId, updates) => {
   const userRef = doc(db, "users", userId);

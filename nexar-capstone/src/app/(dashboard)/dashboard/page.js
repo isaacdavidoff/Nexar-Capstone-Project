@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import useTasks from "@/hooks/useTasks";
 import useAuth from "@/hooks/useAuth";
 import useFocus from "@/hooks/useFocus";
+import { useTaskUI } from "@/context/TaskContext"; // 1. Import Context
 
 import CalendarCard from "@/components/calendarCard";
 import UpcomingTasksCard from "@/components/upcomingTaskCard";
@@ -14,6 +14,7 @@ import { logout } from "@/services/auth";
 
 export default function DashboardPage() {
   const user = useAuth();
+  const { openEditModal } = useTaskUI(); // 2. Grab the trigger function
 
   const { tasks, upcoming, workload, recommendation, loading } =
     useTasks(user?.uid || user?.id);
@@ -28,7 +29,7 @@ export default function DashboardPage() {
     completeSession,
   } = useFocus();
 
-  const [taskToEdit, setTaskToEdit] = useState(null);
+  // 3. ❌ Remove local [taskToEdit, setTaskToEdit] - Context handles this now.
 
   if (loading || user === undefined) {
     return (
@@ -53,9 +54,10 @@ export default function DashboardPage() {
       {/* RIGHT */}
       <aside className="col-span-12 lg:col-span-4 space-y-6">
         
+        {/* 4. Pass the context function to the card */}
         <UpcomingTasksCard 
           tasks={upcoming} 
-          onEditTask={setTaskToEdit} 
+          onEditTask={openEditModal} 
         />
 
         {/* Focus Section */}

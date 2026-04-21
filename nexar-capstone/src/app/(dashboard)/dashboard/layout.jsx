@@ -1,45 +1,38 @@
 "use client";
 
-import { useState } from "react";
 import TopBar from "@/components/topBar";
 import useAuthUser from "@/hooks/useAuth";
 import useCourses from "@/hooks/useCourses";
 import AddTaskModal from "@/components/addTaskModal";
+import { useTaskUI } from "@/context/TaskContext";
 
 export default function DashboardLayout({ children }) {
   const user = useAuthUser();
-
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState(null);
+  
+  // 1. Pull everything from Context
+  const { taskToEdit, isAddModalOpen, closeModal, openAddModal } = useTaskUI();
 
   const { courses } = useCourses(user?.uid || user?.id);
 
-  const isModalOpen = isAddModalOpen || !!selectedTask;
-
-  const handleClose = () => {
-    setIsAddModalOpen(false);
-    setSelectedTask(null);
-  };
+  // 2. The single source of truth for visibility
+  const isModalOpen = isAddModalOpen || !!taskToEdit;
 
   return (
     <div className="w-full">
-      {/* Top Action Bar */}
-      <TopBar onAddTask={() => setIsAddModalOpen(true)} />
+      {/* 3. Use openAddModal from context */}
+      <TopBar onAddTask={openAddModal} />
 
-      {/* Page Content */}
       <div className="mt-6">
         {children}
       </div>
 
-      {/* Global Modal */}
-      {isModalOpen && (
-        <AddTaskModal
-          isOpen={isModalOpen}
-          onClose={handleClose}
-          courses={courses || []}
-          existingTask={selectedTask}
-        />
-      )}
+      {/* 4. Use closeModal from context */}
+      <AddTaskModal
+        isOpen={isModalOpen}
+        onClose={closeModal} 
+        courses={courses || []}
+        existingTask={taskToEdit}
+      />
     </div>
   );
 }

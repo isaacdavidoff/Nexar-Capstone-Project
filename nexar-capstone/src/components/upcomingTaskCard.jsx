@@ -33,12 +33,20 @@ export default function UpcomingTasksCard({ tasks = [], loading, onEditTask }) {
 
   const getStatus = (date) => {
     if (!date) return { label: "No date", color: "text-neutral-400" };
-    const diff = date - now;
-    const days = diff / (1000 * 60 * 60 * 24);
+    
+    if (date < now) return { label: "Overdue", color: "text-rose-500 font-black" };
 
-    if (date < now) return { label: "Overdue", color: "text-rose-500" };
-    if (days < 1) return { label: "Today", color: "text-rose-500 font-black" };
-    if (days < 2) return { label: "Tomorrow", color: "text-amber-500" };
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return { label: "Today", color: "text-rose-600 font-black" };
+    }
+    
+    if (date.toDateString() === tomorrow.toDateString()) {
+      return { label: "Tomorrow", color: "text-amber-500 font-bold" };
+    }
 
     return {
       label: date.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
