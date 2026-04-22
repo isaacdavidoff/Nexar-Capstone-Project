@@ -4,15 +4,15 @@ import { useState, useEffect } from "react";
 import useAuthUser from "@/hooks/useAuth";
 import { createCourse } from "@/lib/courses";
 
+// We move the initial state outside the component to avoid re-creation on every render
+const initialState = {
+  courseName: "",
+  term: "",
+  color: "#6366f1", // Indigo default
+};
+
 export default function CourseModal({ isOpen, onClose }) {
   const user = useAuthUser();
-
-  // We move the initial state inside for cleaner resets
-  const initialState = {
-    courseName: "",
-    term: "",
-    color: "#6366f1", // Indigo default
-  };
 
   const [form, setForm] = useState(initialState);
   const [loading, setLoading] = useState(false);

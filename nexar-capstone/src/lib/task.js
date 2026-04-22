@@ -253,3 +253,41 @@ export const deleteTasksByCourse = async (courseId) => {
   await batch.commit();
   console.log(`Successfully deleted ${snapshot.size} tasks for course: ${courseId}`);
 };
+
+export const syncAutoReminders = async (taskId, dueDate) => {
+  const now = new Date();
+  const due = dueDate instanceof Date ? dueDate : dueDate.toDate();
+  const totalLeadTimeMs = due.getTime() - now.getTime();
+
+  // 1. Cleanup: Remove existing reminders
+  const remindersRef = collection(db, "tasks", taskId, "reminders");
+  const existing = await getDocs(remindersRef);
+  
+  // Use a batch or Promise.all to clear old data
+  await Promise.all(existing.docs.map(doc => deleteDoc(doc.ref)));
+
+  // 2. Define milestones
+  const thirtyMinsMs = 30 * 60 * 1000;
+  const midPointMs = totalLeadTimeMs * 0.5;
+  const milestones = [midPointMs, thirtyMinsMs];
+
+  // 3. Create reminders, filtering out past times
+  const reminderPromises = milestones
+    .map((msFromDue) => {
+      const reminderTime = new Date(due.getTime() - msFromDue);
+
+      if (reminderTime > now) {
+        return addDoc(remindersRef, {
+          reminderTime: Timestamp.fromDate(reminderTime),
+          type: "push",
+          sent: false,
+          label: msFromDue === thirtyMinsMs ? "Final Warning" : "Checkpoint",
+          createdAt: Timestamp.now(),
+        });
+      }
+      return null;
+    })
+    .filter(p => p !== null); // 👈 Only attempt to resolve actual database writes
+
+  await Promise.all(reminderPromises);
+};

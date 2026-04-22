@@ -5,6 +5,7 @@ import useAuthUser from "@/hooks/useAuth";
 import useCourses from "@/hooks/useCourses";
 import AddTaskModal from "@/components/addTaskModal";
 import { useTaskUI } from "@/context/TaskContext";
+import NotificationManager from "@/components/notificationManager";
 
 export default function DashboardLayout({ children }) {
   const user = useAuthUser();
@@ -21,6 +22,7 @@ export default function DashboardLayout({ children }) {
     <div className="w-full">
       {/* 3. Use openAddModal from context */}
       <TopBar onAddTask={openAddModal} />
+      <NotificationManager />
 
       <div className="mt-6">
         {children}

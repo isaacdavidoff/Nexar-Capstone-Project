@@ -5,6 +5,7 @@ import useAuthUser from "@/hooks/useAuth";
 import { addTask, updateTask } from "@/lib/task";
 import { formatDateInput } from "@/lib/dateFormat";
 import { Timestamp } from "firebase/firestore";
+import { syncAutoReminders } from "@/lib/task";
 
 export default function AddTaskModal({ isOpen, onClose, courses = [], existingTask = null }) {
   const user = useAuthUser();
@@ -84,14 +85,19 @@ export default function AddTaskModal({ isOpen, onClose, courses = [], existingTa
         status: existingTask?.status || "pending" // Preserve status on edit
       };
 
+      let taskId = existingTask?.id;
+
       if (isEdit) {
         await updateTask(existingTask.id, taskData);
       } else {
-        await addTask({
+       const result = await addTask({
           ...taskData,
           createdAt: Timestamp.now(),
         });
+        taskId = result.id;
       }
+
+      await syncAutoReminders(taskId, dateObj);
 
       onClose();
     } catch (err) {
