@@ -63,6 +63,7 @@ export default function NotificationManager() {
       }));
 
       pendingReminders.forEach(async (reminder) => {
+        
         const isTime = reminder.reminderTime.toDate() <= new Date();
 
         if (isTime && !reminder.sent) {

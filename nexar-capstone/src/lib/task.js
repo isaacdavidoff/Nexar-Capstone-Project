@@ -277,7 +277,13 @@ export const syncAutoReminders = async (taskId, dueDate) => {
       const reminderTime = new Date(due.getTime() - msFromDue);
 
       if (reminderTime > now) {
-        return addDoc(remindersRef, {
+        const remindersRef = collection(db, "tasks", taskId, "reminders");
+  
+        // Create a reference first to get the ID
+        const newReminderRef = doc(remindersRef); 
+        
+        return setDoc(newReminderRef, {
+          reminderId: newReminderRef.id, // 👈 Store the ID explicitly
           reminderTime: Timestamp.fromDate(reminderTime),
           type: "push",
           sent: false,

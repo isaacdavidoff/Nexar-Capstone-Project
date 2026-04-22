@@ -4,6 +4,7 @@ import { useState } from "react";
 import useAuthUser from "@/hooks/useAuth";
 import useCourses from "@/hooks/useCourses"; 
 import CreateCourseModal from "@/components/courseModal";
+import Link from "next/link";
 
 
 export default function CoursesPage() {
@@ -61,8 +62,9 @@ export default function CoursesPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {courses.map((course) => (
-                <div 
-                  key={course.id || course.courseId} 
+                <Link
+                  key={course.id || course.courseId}
+                  href={`/courses/${course.id || course.courseId}`} 
                   className="group relative overflow-hidden p-8 bg-white rounded-[2rem] border border-neutral-100 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer"
                 >
                   {/* Color Accent Bar */}
@@ -94,7 +96,7 @@ export default function CoursesPage() {
                        />
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
