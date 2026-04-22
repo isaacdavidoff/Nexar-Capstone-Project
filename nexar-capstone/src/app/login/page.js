@@ -21,7 +21,6 @@ export default function LoginPage() {
       [e.target.name]: e.target.value,
     }));
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -32,71 +31,80 @@ export default function LoginPage() {
   
       if (error) {
         setError(error);
-        setLoading(false);
-        return;
+        return; // loading is handled by finally block
       }
-  
-      localStorage.setItem("currentUser", JSON.stringify(data));
-  
+      
       router.push("/dashboard"); 
     } catch (err) {
-      setError(err.message || "invalid credentials");
+      setError("Invalid email or password.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-    <div className="w-full max-w-md bg-white p-6 rounded-xl shadow">
-      
-      <h1 className="text-2xl font-semibold mb-6 text-center">
+    // ... inside return ...
+<div className="min-h-screen flex items-center justify-center bg-neutral-50 px-4 selection:bg-indigo-100">
+  <div className="w-full max-w-md bg-white p-10 rounded-[2.5rem] border border-neutral-100 shadow-xl shadow-neutral-200/50">
+    
+    <div className="flex flex-col items-center mb-10">
+      <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-2xl mb-4">
+        N
+      </div>
+      <h1 className="text-3xl font-black tracking-tighter text-neutral-900">
         Welcome Back
       </h1>
+      <p className="text-neutral-400 font-medium text-sm">Continue your focus session</p>
+    </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        
-        <input
-          name="email"
-          type="email"
-          placeholder="Email"
-          onChange={handleChange}
-          required
-          className="border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <input
+        name="email"
+        type="email"
+        placeholder="Student Email"
+        onChange={handleChange}
+        required
+        className="bg-neutral-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-indigo-600 transition outline-none font-medium"
+      />
 
-        <input
-          name="password"
-          type="password"
-          placeholder="Password"
-          onChange={handleChange}
-          required
-          className="border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-
-        <button
-          disabled={loading}
-          className="bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-        >
-          {loading ? "Logging in..." : "Login"}
-        </button>
-
-        {error && (
-          <p className="text-red-500 text-sm text-center">{error}</p>
-        )}
-      </form>
+      <input
+        name="password"
+        type="password"
+        placeholder="Password"
+        onChange={handleChange}
+        required
+        className="bg-neutral-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-indigo-600 transition outline-none font-medium"
+      />
 
       <button
-        onClick={() => router.push("/forgot-password")}
-        className="mt-4 text-sm text-blue-600 hover:underline w-full text-center"
+        disabled={loading}
+        className="bg-neutral-900 text-white py-4 rounded-2xl font-black hover:bg-indigo-600 transition-all disabled:opacity-50 shadow-lg active:scale-[0.98] mt-2"
       >
-        Forgot Password?
+        {loading ? "Authenticating..." : "Sign In"}
       </button>
 
-      <button onClick={() => router.push("/signup")} className="mt-2 text-sm text-gray-600 hover:underline w-full text-center">
-      <span>Don&apos;t have an account? Sign Up</span>
+      {error && (
+        <div className="bg-red-50 text-red-500 text-xs font-bold p-3 rounded-xl text-center border border-red-100">
+          {error}
+        </div>
+      )}
+    </form>
+
+    <div className="mt-8 pt-6 border-t border-neutral-50 flex flex-col gap-3">
+      <button
+        onClick={() => router.push("/forgot-password")}
+        className="text-xs font-bold text-neutral-400 hover:text-indigo-600 transition"
+      >
+        Forgot your password?
+      </button>
+      <button 
+        onClick={() => router.push("/signup")} 
+        className="text-xs font-bold text-neutral-400 hover:text-neutral-900 transition"
+      >
+        New to Nexar? <span className="text-indigo-600 underline underline-offset-4">Create an account</span>
       </button>
     </div>
   </div>
+</div>
 );
 }

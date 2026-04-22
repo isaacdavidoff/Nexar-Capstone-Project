@@ -12,17 +12,32 @@ export default function useAuthUser() {
     let unsubscribeUser = null;
 
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-  
+      // 1. Cleanup previous Firestore subscription
       if (unsubscribeUser) {
         unsubscribeUser();
         unsubscribeUser = null;
       }
 
-      if (currentUser?.uid) {
+      if (currentUser) {
+        // 2. IMMEDIATE UPDATE: Set basic auth data so ProtectedRoute lets us in
+        setUser({
+          uid: currentUser.uid,
+          email: currentUser.email,
+          photoURL: currentUser.photoURL,
+          loadingDoc: true // Flag to show we are still fetching Firestore data
+        });
+
+        // 3. AUGMENT: Fetch the full profile from Firestore
         unsubscribeUser = subscribeToUser(currentUser.uid, (userDoc) => {
-          setUser(userDoc);
+          setUser((prev) => ({
+            ...prev,
+            ...userDoc,
+            uid: currentUser.uid,
+            loadingDoc: false
+          }));
         });
       } else {
+        // 4. LOGGED OUT: Explicitly set to null
         setUser(null);
       }
     });

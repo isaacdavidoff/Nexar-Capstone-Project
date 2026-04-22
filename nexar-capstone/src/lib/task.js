@@ -9,11 +9,12 @@ import {
   where,
   orderBy,
   Timestamp,
+  writeBatch,
+  onSnapshot
 } from "firebase/firestore";
 
 import { db } from "./firebase";
 
-import { onSnapshot } from "firebase/firestore";
 
 export const subscribeToTasks = (userId, callback) => {
   if (!userId) return () => {};
@@ -108,7 +109,9 @@ export const addTask = async (task) => {
     dueDateDay: date.toISOString().split("T")[0],
 
     priority: task.priority || "medium",
+  priorityWeight: task.priority === "high" ? 3 : task.priority === "low" ? 1 : 2,
     estimatedTime: task.estimatedTime || 60,
+    estimatedMinutes: Number(task.estimatedTime) || 60,
 
     notes: task.notes || "",
 
@@ -196,25 +199,92 @@ export const getTasksByStatus = async (userId, status) => {
 
 export const updateTask = async (taskId, updates) => {
   const docRef = doc(db, "tasks", taskId);
+  
+  const finalUpdates = { ...updates, updatedAt: Timestamp.now() };
 
-  return await updateDoc(docRef, {
-    ...updates,
-    updatedAt: Timestamp.now(),
-  });
+  // Sync dueDateDay if the dueDate is being changed
+  if (updates.dueDate) {
+    const d = new Date(updates.dueDate);
+    if (!isNaN(d.getTime())) {
+      finalUpdates.dueDate = Timestamp.fromDate(d);
+      finalUpdates.dueDateDay = d.toISOString().split("T")[0];
+    }
+  }
+
+  return await updateDoc(docRef, finalUpdates);
 };
 
 export const deleteTask = async (taskId) => {
   return await deleteDoc(doc(db, "tasks", taskId));
 };
 
+
 export const deleteTasksByUser = async (userId) => {
   const q = query(collection(db, "tasks"), where("userId", "==", userId));
-
   const snapshot = await getDocs(q);
+  const batch = writeBatch(db);
 
-  const deletions = snapshot.docs.map((docSnap) =>
-    deleteDoc(doc(db, "tasks", docSnap.id))
+  snapshot.docs.forEach((docSnap) => {
+    batch.delete(docSnap.ref);
+  });
+
+  await batch.commit();
+};
+
+/**
+ * Deletes all tasks associated with a specific course.
+ * Useful for cascading deletes when a course is removed.
+ */
+export const deleteTasksByCourse = async (courseId) => {
+  if (!courseId) return;
+
+  const q = query(
+    collection(db, "tasks"), 
+    where("courseId", "==", courseId)
   );
+  
+  const snapshot = await getDocs(q);
+  const batch = writeBatch(db);
 
-  await Promise.all(deletions);
+  snapshot.docs.forEach((docSnap) => {
+    batch.delete(docSnap.ref);
+  });
+
+  await batch.commit();
+  console.log(`Successfully deleted ${snapshot.size} tasks for course: ${courseId}`);
+};
+
+export const syncAutoReminders = async (taskId, dueDate) => {
+  const now = new Date();
+  const due = dueDate instanceof Date ? dueDate : dueDate.toDate();
+  const totalLeadTimeMs = due - now;
+
+  // 1. Cleanup: Remove any existing reminders (essential for rescheduled tasks)
+  const remindersRef = collection(db, "tasks", taskId, "reminders");
+  const existing = await getDocs(remindersRef);
+  const deletePromises = existing.docs.map(doc => deleteDoc(doc.ref));
+  await Promise.all(deletePromises);
+
+  // 2. Schedule Logic: Final Call (30m) and a Mid-point Check (50%)
+  const thirtyMinsMs = 30 * 60 * 1000;
+  const midPointMs = totalLeadTimeMs * 0.5;
+
+  const milestones = [midPointMs, thirtyMinsMs];
+
+  const reminderPromises = milestones.map((msFromDue) => {
+    const reminderTime = new Date(due.getTime() - msFromDue);
+
+    // Only save if the reminder is actually in the future
+    if (reminderTime > now) {
+      return addDoc(remindersRef, {
+        reminderTime: Timestamp.fromDate(reminderTime),
+        type: "push",
+        sent: false,
+        label: msFromDue === thirtyMinsMs ? "Final Warning" : "Checkpoint",
+        createdAt: Timestamp.now(),
+      });
+    }
+  });
+
+  await Promise.all(reminderPromises);
 };

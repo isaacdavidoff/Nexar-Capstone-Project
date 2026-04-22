@@ -1,37 +1,38 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import useAuthUser from "@/hooks/useAuth";
 import { createCourse } from "@/lib/courses";
 
 export default function CourseModal({ isOpen, onClose }) {
   const user = useAuthUser();
 
-  const initialState = useMemo(() => ({
+  // We move the initial state inside for cleaner resets
+  const initialState = {
     courseName: "",
     term: "",
-    color: "#6366f1",
-  }), []);
+    color: "#6366f1", // Indigo default
+  };
 
   const [form, setForm] = useState(initialState);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Handle resets and Global Listeners
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+      const handleEsc = (e) => { if (e.key === "Escape") onClose(); };
+      window.addEventListener("keydown", handleEsc);
+      return () => {
+        window.removeEventListener("keydown", handleEsc);
+        document.body.style.overflow = 'unset';
+      };
+    } else {
       setForm(initialState);
       setError(null);
     }
-
-    const handleEsc = (e) => {
-      if (e.key === "Escape") onClose();
-    }
-
-    if (isOpen)  window.addEventListener("keydown", handleEsc);
-
-    return () => window.removeEventListener("keydown", handleEsc);
-
-  }, [initialState, isOpen, onClose]);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -48,8 +49,9 @@ export default function CourseModal({ isOpen, onClose }) {
       return;
     }
   
-    if (!user?.id) {
-      setError("You must be logged in to create a course.");
+    const actualUid = user?.uid || user?.id;
+    if (!actualUid) {
+      setError("Session expired. Please log in again.");
       return;
     }
   
@@ -58,14 +60,16 @@ export default function CourseModal({ isOpen, onClose }) {
       setError(null);
   
       await createCourse({
-        userId: user.id,
+        userId: actualUid,
         ...form,
         courseName: form.courseName.trim(),
+        createdAt: new Date().toISOString(), // Good for sorting later
       });
   
       onClose();
     } catch (err) {
-      setError("Something went wrong. Please try again.");
+      console.error(err);
+      setError("Failed to save course. Check your connection.");
     } finally {
       setLoading(false);
     }
@@ -73,81 +77,87 @@ export default function CourseModal({ isOpen, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-neutral-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
       onClick={onClose}
-      aria-modal="true"
-      role="dialog"
     >
       <div
-        className="bg-white w-full max-w-md rounded-xl shadow-xl p-6"
+        className="bg-white w-full max-w-md rounded-[2rem] shadow-2xl p-8 animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-800">Create Course</h2>
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h2 className="text-2xl font-black text-neutral-900">Add Course</h2>
+            <p className="text-xs text-neutral-400 font-bold uppercase tracking-widest mt-1">Academic Registry</p>
+          </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-black transition-colors"
-            aria-label="Close modal"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-neutral-100 text-neutral-400 hover:text-neutral-900 transition-colors"
           >
             ✕
           </button>
         </div>
 
         {error && (
-          <p className="mb-4 text-sm text-red-600 bg-red-50 p-2 rounded">
+          <div className="mb-6 text-xs font-bold text-rose-500 bg-rose-50 p-3 rounded-xl border border-rose-100 animate-shake">
             {error}
-          </p>
+          </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
-              Course Name
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">
+              Course Title
             </label>
             <input
               type="text"
               name="courseName"
-              placeholder="e.g. Advanced Web Development"
+              placeholder="e.g. Data Structures"
               value={form.courseName}
               onChange={handleChange}
-              required
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-violet-500 outline-none transition-all"
+              autoFocus
+              className="w-full bg-neutral-50 border-2 border-neutral-100 rounded-2xl px-4 py-3 text-sm font-medium focus:border-indigo-500 focus:bg-white outline-none transition-all"
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
-              Term
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest ml-1">
+              Term / Semester
             </label>
             <input
               type="text"
               name="term"
-              placeholder="e.g. Winter 2026"
+              placeholder="e.g. Spring 2026"
               value={form.term}
               onChange={handleChange}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-violet-500 outline-none transition-all"
+              className="w-full bg-neutral-50 border-2 border-neutral-100 rounded-2xl px-4 py-3 text-sm font-medium focus:border-indigo-500 focus:bg-white outline-none transition-all"
             />
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
-            <span className="text-sm font-medium text-gray-700">
-              Theme Color
-            </span>
+          <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border-2 border-dashed border-neutral-200">
+            <div className="flex items-center gap-3">
+              <div 
+                className="w-8 h-8 rounded-lg shadow-inner transition-colors duration-300"
+                style={{ backgroundColor: form.color }}
+              />
+              <span className="text-xs font-bold text-neutral-600 uppercase tracking-tighter">
+                Branding Color
+              </span>
+            </div>
             <input
               type="color"
               name="color"
               value={form.color}
               onChange={handleChange}
-              className="w-10 h-10 border-none rounded-lg cursor-pointer bg-transparent"
+              className="w-8 h-8 border-none bg-transparent cursor-pointer overflow-hidden"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-violet-600 text-white py-3 rounded-lg text-sm font-semibold hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md active:scale-[0.98]"
+            className="w-full bg-neutral-900 text-white py-4 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-indigo-600 disabled:opacity-50 transition-all shadow-xl active:scale-[0.98]"
           >
-            {loading ? "Creating..." : "Create Course"}
+            {loading ? "Syncing..." : "Confirm Course"}
           </button>
         </form>
       </div>

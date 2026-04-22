@@ -7,33 +7,46 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   const navItems = [
-    { name: "Dashboard", href: "/dashboard", icon: "🏠" },
+    { name: "Home", href: "/dashboard", icon: "🏠" },
     { name: "Courses", href: "/courses", icon: "📚" },
     { name: "Focus", href: "/focus", icon: "🎯" },
-    { name: "Reports", href: "/reports", icon: "📊" },
+    { name: "Stats", href: "/reports", icon: "📊" },
   ];
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur border-t"
-      aria-label="Bottom navigation"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-t border-neutral-100 px-2 pt-2 pb-5"
+      aria-label="Mobile navigation"
     >
-      <div className="flex justify-around py-2">
+      <div className="flex justify-around items-center max-w-md mx-auto">
         {navItems.map((item) => {
-          const isActive = pathname.startsWith(item.href);
+          const isActive = pathname === item.href;
 
           return (
             <Link
               key={item.name}
               href={item.href}
-              className={`flex flex-col items-center text-xs ${
-                isActive
-                  ? "text-purple-800 font-medium"
-                  : "text-neutral-500"
-              }`}
+              className="relative flex flex-col items-center justify-center w-full py-1 group"
             >
-              <span className="text-lg">{item.icon}</span>
-              <span>{item.name}</span>
+              {/* Active Highlight Glow */}
+              {isActive && (
+                <div className="absolute -top-2 w-8 h-1 bg-violet-600 rounded-full animate-pulse" />
+              )}
+              
+              <span className={`text-xl transition-transform ${isActive ? "scale-110" : "grayscale opacity-70"}`}>
+                {item.icon}
+              </span>
+              
+              <span className={`text-[10px] mt-1 transition-colors ${
+                isActive
+                  ? "text-violet-700 font-bold"
+                  : "text-neutral-400 font-medium"
+              }`}>
+                {item.name}
+              </span>
+
+              {/* Tap Feedback Overlay */}
+              <div className="absolute inset-0 bg-neutral-100/0 active:bg-neutral-100/50 rounded-xl transition-colors" />
             </Link>
           );
         })}

@@ -1,52 +1,105 @@
-
-import { db } from "./firebase";
 import {
   collection,
   addDoc,
+  updateDoc,
+  doc,
   query,
   where,
-  getDocs,
-  updateDoc,
+  orderBy,
+  limit,
+  onSnapshot,
+  Timestamp,
+  increment,
 } from "firebase/firestore";
+import { db } from "./firebase";
+import { updateUser } from "./user";
 
-export const createSession = async ({
-  userId,
-  taskId,
-  duration,
-}) => {
-  const sessionRef = await addDoc(collection(db, "focusSessions"), {
+/**
+ * Starts a new focus session in Firestore.
+ * @param {Object} params - { userId, taskId, duration }
+ * @returns {Promise<string>} The new session ID
+ */
+export const createSession = async ({ userId, taskId, duration, title }) => {
+  if (!userId) {
+    throw new Error("User ID is required to start a session.");
+  }
+
+  const sessionData = {
     userId,
-    taskId,
+    taskId: taskId || null,
+    title: title || "Focus Session",
 
-    plannedDuration: duration, // what user intended
-    actualDuration: 0,         // what they completed
+    plannedDuration: Number(duration) || 0,
+    actualDuration: 0,
 
-    status: "active", // active | completed | abandoned
+    status: "active",
 
-    startedAt: new Date(),
+    startedAt: Timestamp.now(),
     endedAt: null,
+    createdAt: Timestamp.now(),
+  };
 
-    createdAt: new Date(),
-  });
-
+  const sessionRef = await addDoc(collection(db, "focusSessions"), sessionData);
   return sessionRef.id;
 };
-export const getSessionsByUser = async (userId) => {
-  const q = query(
-    collection(db, "focusSessions"),
-    where("userId", "==", userId)
-  );
 
-  const snapshot = await getDocs(q);
+/**
+ * Finalizes a focus session and updates the user's aggregate statistics.
+ * @param {string} userId - Current user ID
+ * @param {string} sessionId - ID of the session to close
+ * @param {number} actualMinutes - Final time elapsed
+ */
+export const completeSession = async (userId, sessionId, updates) => {
+  if (!userId || !sessionId) return;
 
-  return snapshot.docs.map((doc) => ({
-    sessionId: doc.id,
-    ...doc.data(),
-  }));
+  const sessionRef = doc(db, "focusSessions", sessionId);
+
+  const minutes = Number(updates.actualDuration || 0);
+
+  await updateDoc(sessionRef, {
+    actualDuration: minutes,
+    status: updates.status || "completed",
+    endedAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+  });
+
+  await updateUser(userId, {
+    "stats.totalFocusMinutes": increment(minutes),
+    "stats.lastActiveDate": Timestamp.now(),
+  });
 };
 
-
+/**
+ * Simple update for session metadata (e.g., pausing or status changes).
+ */
 export const updateSession = async (sessionId, updates) => {
   const ref = doc(db, "focusSessions", sessionId);
-  await updateDoc(ref, updates);
+  await updateDoc(ref, {
+    ...updates,
+    updatedAt: Timestamp.now(),
+  });
+};
+
+/**
+ * Real-time subscription to a user's recent focus history.
+ */
+export const subscribeToRecentSessions = (userId, callback, maxResults = 10) => {
+  if (!userId) return () => {};
+
+  const q = query(
+    collection(db, "focusSessions"),
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc"),
+    limit(maxResults)
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const sessions = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+      startedAt: doc.data().startedAt?.toDate(),
+      endedAt: doc.data().endedAt?.toDate(),
+    }));
+    callback(sessions);
+  });
 };
