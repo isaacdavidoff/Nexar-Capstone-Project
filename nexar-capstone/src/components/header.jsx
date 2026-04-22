@@ -28,7 +28,7 @@ export default function Header() {
   const isLoading = user === undefined;
 
   return (
-    <header className="w-full border-b bg-white/80 backdrop-blur-md sticky top-0 z-50">
+    <header className="w-full border-b bg-white/80 backdrop-blur-md sticky top-0 z-50 border-neutral-300">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Image src={Logo} alt="Nexar Logo" width={100} height={24} className="hidden sm:block w-8 h-8" />

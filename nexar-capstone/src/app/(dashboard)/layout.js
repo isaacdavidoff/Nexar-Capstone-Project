@@ -12,7 +12,7 @@ export default function AuthenticatedLayout({ children }) {
       <div className="min-h-screen bg-neutral-50 flex flex-col">
         <Header />
     
-        <main className="flex-1 py-8 px-4 max-w-7xl mx-auto w-full">
+        <main className="flex-1 pt-8 pb-24 px-4 max-w-7xl mx-auto w-full">
           {children}
         </main>
 

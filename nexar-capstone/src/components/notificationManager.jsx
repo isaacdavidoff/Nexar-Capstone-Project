@@ -12,7 +12,7 @@ export default function NotificationManager() {
   const user = useAuth();
   const { tasks } = useTasks(user?.uid || user?.id);
   const { sendNotification } = useNexarNotifications();
-  
+
   const notifiedTasks = useRef(new Set());
 
   useEffect(() => {
@@ -22,10 +22,14 @@ export default function NotificationManager() {
 
     tasks.forEach(async (task) => {
       const due = toDate(task.dueDate);
-      
-      
+
       // Skip if: no date, already completed, or already notified in this session
-      if (!due || task.status === "completed" || notifiedTasks.current.has(task.id)) return;
+      if (
+        !due ||
+        task.status === "completed" ||
+        notifiedTasks.current.has(task.id)
+      )
+        return;
 
       const diffInMinutes = (due.getTime() - now.getTime()) / (1000 * 60);
 
@@ -36,8 +40,8 @@ export default function NotificationManager() {
       // 2. Trigger if either condition is met
       if (isUpcoming || isRecentOverdue) {
         const title = isUpcoming ? "Upcoming Deadline" : "Task Overdue!";
-        const message = isUpcoming 
-          ? `"${task.title}" is due soon! Time to focus.` 
+        const message = isUpcoming
+          ? `"${task.title}" is due soon! Time to focus.`
           : `"${task.title}" was due recently. Check your schedule!`;
 
         sendNotification(title, {
@@ -48,25 +52,37 @@ export default function NotificationManager() {
         // 3. Mark as notified so we don't spam the user
         notifiedTasks.current.add(task.id);
       }
-// Inside your NotificationManager loop
-const remindersSnapshot = await getDocs(collection(db, `tasks/${task.id}/reminders`));
-const pendingReminders = remindersSnapshot.docs.map(doc => doc.data());
 
-pendingReminders.forEach(async (reminder) => {
-  const isTime = reminder.reminderTime.toDate() <= new Date();
-  
-  if (isTime && !reminder.sent && reminder.type === 'push') {
-    sendNotification("Nexar Reminder", { body: task.title });
-    
-    // IMMEDIATELY update Firestore so other tabs don't send it too
-    await updateDoc(doc(db, `tasks/${task.id}/reminders`, reminder.reminderId), {
-      sent: true
-    });
-  }
-});
+      const remindersSnapshot = await getDocs(
+        collection(db, `tasks/${task.id}/reminders`)
+      );
 
+      const pendingReminders = remindersSnapshot.docs.map((doc) => ({
+        reminderId: doc.id, //
+        ...doc.data(),
+      }));
+
+      pendingReminders.forEach(async (reminder) => {
+        const isTime = reminder.reminderTime.toDate() <= new Date();
+
+        if (isTime && !reminder.sent) {
+          sendNotification("Nexar Reminder", { body: task.title });
+
+          const reminderRef = doc(
+            db,
+            "tasks",
+            task.id,
+            "reminders",
+            reminder.reminderId
+          );
+
+          await updateDoc(reminderRef, {
+            sent: true,
+          });
+        }
+      });
     });
   }, [tasks, sendNotification]);
 
-  return null; 
+  return null;
 }

@@ -10,7 +10,7 @@ export default function BottomNav() {
     { name: "Home", href: "/dashboard", icon: "🏠" },
     { name: "Courses", href: "/courses", icon: "📚" },
     { name: "Focus", href: "/focus", icon: "🎯" },
-    { name: "Stats", href: "/reports", icon: "📊" },
+    { name: "Stats", href: "/report", icon: "📊" },
   ];
 
   return (
