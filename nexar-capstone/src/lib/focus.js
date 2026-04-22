@@ -19,7 +19,7 @@ import { updateUser } from "./user";
  * @param {Object} params - { userId, taskId, duration }
  * @returns {Promise<string>} The new session ID
  */
-export const createSession = async ({ userId, taskId, duration }) => {
+export const createSession = async ({ userId, taskId, duration, title }) => {
   if (!userId) {
     throw new Error("User ID is required to start a session.");
   }
@@ -27,9 +27,13 @@ export const createSession = async ({ userId, taskId, duration }) => {
   const sessionData = {
     userId,
     taskId: taskId || null,
+    title: title || "Focus Session",
+
     plannedDuration: Number(duration) || 0,
     actualDuration: 0,
+
     status: "active",
+
     startedAt: Timestamp.now(),
     endedAt: null,
     createdAt: Timestamp.now(),
@@ -45,21 +49,20 @@ export const createSession = async ({ userId, taskId, duration }) => {
  * @param {string} sessionId - ID of the session to close
  * @param {number} actualMinutes - Final time elapsed
  */
-export const completeSession = async (userId, sessionId, actualMinutes) => {
+export const completeSession = async (userId, sessionId, updates) => {
   if (!userId || !sessionId) return;
 
   const sessionRef = doc(db, "focusSessions", sessionId);
-  const minutes = Number(actualMinutes);
 
-  // 1. Update the session record
+  const minutes = Number(updates.actualDuration || 0);
+
   await updateDoc(sessionRef, {
     actualDuration: minutes,
-    status: "completed",
+    status: updates.status || "completed",
     endedAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
   });
 
-  // 2. Atomically sync user total minutes and activity status
   await updateUser(userId, {
     "stats.totalFocusMinutes": increment(minutes),
     "stats.lastActiveDate": Timestamp.now(),
